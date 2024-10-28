@@ -20,21 +20,49 @@ VerboseStateFactory: false
 robots:
   ground:
     module: env/ground
-# # General constraints, always on
-# constraints:
-# - type: contact
-# - type: dynamics
-#   damper: [0.1, 0.01, 0.5]
-# - type: compoundJoint
+
 # Collision constraint
 collisions:
 - type: collision
   useMinimal: true
 
 # Implement some additional text states
-states: {}
+states: 
+  FSM_Compliance:
+    base: Meta
+    Managed: false
+    StepByStep: true
+
+    transitions:
+      - [MonodzukuriKinovaDemo_NonCompliant, OK, MonodzukuriKinovaDemo_NSCompliant, OK, MonodzukuriKinovaDemo_Compliance, Auto]
+      - [MonodzukuriKinovaDemo_Compliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
+
+  FSM_NSCompliant:
+    base: Meta
+    Managed: false
+    StepByStep: true
+
+    transitions:
+      - [MonodzukuriKinovaDemo_NonCompliant, OK, MonodzukuriKinovaDemo_NSCompliant, Auto]
+      - [MonodzukuriKinovaDemo_NSCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
+
+
 # Transitions map
 transitions:
-- [MonodzukuriKinovaDemo_Initial, OK, MonodzukuriKinovaDemo_Initial, Strict]
+  - [MonodzukuriKinovaDemo_Initial, OK, MonodzukuriKinovaDemo_Initial, Strict]
+  - [MonodzukuriKinovaDemo_Initial, OK, FSM_Compliance, Auto]
+  - [MonodzukuriKinovaDemo_Initial, OK, FSM_NSCompliant, Auto]
+  - [MonodzukuriKinovaDemo_Compliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
+  - [MonodzukuriKinovaDemo_NSCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
+
 # Initial state
 init: MonodzukuriKinovaDemo_Initial
+
+Plugins: [ PassivityTorqueFeedback, ExternalForcesEstimator, mc_joystick_plugin ]
+
+ObserverPipelines:
+- name: Pipeline
+  observers:
+    - type: Encoder
+      config:
+        velocity: encoderVelocities

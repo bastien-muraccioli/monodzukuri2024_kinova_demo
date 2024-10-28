@@ -1,6 +1,10 @@
 #pragma once
 
 #include <mc_control/fsm/Controller.h>
+#include <mc_rbdyn/VirtualTorqueSensor.h>
+#include <mc_tasks/CompliantEndEffectorTask.h>
+#include <mc_tasks/CompliantPostureTask.h>
+#include <mc_rbdyn/Collision.h>
 
 #include "api.h"
 
@@ -24,8 +28,32 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo : public mc_control::f
   double lambda_;
   bool closeLoopVelocityDamper_;
 
+  // Tasks
+  std::shared_ptr<mc_tasks::CompliantPostureTask> compPostureTask;
+  std::shared_ptr<mc_tasks::CompliantEndEffectorTask> compEETask;
+
+  // Targets
+  std::map<std::string, std::vector<double>> postureHome;
+  std::map<std::string, std::vector<double>> postureTarget;
+  Eigen::VectorXd posture_target_log;
+
+  // State variables
+  bool moveNextState;
+  int currentSequence;
+  std::string sequenceOutput;
+  bool waitingForInput;
+
+  // Task variables
+  Eigen::MatrixXd taskOrientation_; // Rotation Matrix
+  Eigen::Vector3d taskPosition_;
+
 private:
   mc_rtc::Configuration config_;
+  std::vector<mc_rbdyn::Collision> collisions_;
+  void getPostureTarget(void);
+  
+  // State index
+  int stateIndex_;
 
   // Dynamics velocity damper private parameters
   double dt_;
