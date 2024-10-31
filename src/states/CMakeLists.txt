@@ -1,5 +1,7 @@
 add_fsm_state_simple(MonodzukuriKinovaDemo_Initial)
 add_fsm_state_simple(MonodzukuriKinovaDemo_Compliance)
+add_fsm_state_simple(MonodzukuriKinovaDemo_SinCompliance)
 add_fsm_state_simple(MonodzukuriKinovaDemo_NSCompliant)
+add_fsm_state_simple(MonodzukuriKinovaDemo_MinJerk)
 
 add_fsm_data_directory(data)

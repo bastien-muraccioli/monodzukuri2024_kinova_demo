@@ -18,6 +18,8 @@ if(NOT TARGET mc_rtc::mc_control)
   find_package(mc_rtc REQUIRED)
 endif()
 
+find_package(MinimumJerkTask REQUIRED)
+
 add_subdirectory(src)
 
 if(BUILD_TESTING)

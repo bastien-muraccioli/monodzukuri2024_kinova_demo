@@ -5,6 +5,7 @@
 #include <mc_tasks/CompliantEndEffectorTask.h>
 #include <mc_tasks/CompliantPostureTask.h>
 #include <mc_rbdyn/Collision.h>
+#include <mc_tasks/MinimumJerkTask.h>
 
 #include "api.h"
 
@@ -31,6 +32,7 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo : public mc_control::f
   // Tasks
   std::shared_ptr<mc_tasks::CompliantPostureTask> compPostureTask;
   std::shared_ptr<mc_tasks::CompliantEndEffectorTask> compEETask;
+  std::shared_ptr<mc_tasks::MinimumJerkTask> minJerkTask;
 
   // Targets
   std::map<std::string, std::vector<double>> postureHome;

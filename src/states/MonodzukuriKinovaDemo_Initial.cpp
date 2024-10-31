@@ -49,7 +49,7 @@ bool MonodzukuriKinovaDemo_Initial::run(mc_control::fsm::Controller & ctl_)
       {
         ctl.changeModeAvailable = false;
         ctl.changeModeRequest = false;
-        output("OK");
+        output("SIN");
         return true;
       }
       else if(ctl.joypadComplianceModeFlag)
@@ -63,7 +63,7 @@ bool MonodzukuriKinovaDemo_Initial::run(mc_control::fsm::Controller & ctl_)
       {
         ctl.changeModeAvailable = false;
         ctl.changeModeRequest = false;
-        output("OK");
+        output("MINJERK");
         return true;
       }
     }

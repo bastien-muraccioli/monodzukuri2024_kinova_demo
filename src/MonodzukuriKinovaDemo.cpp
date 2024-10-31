@@ -23,8 +23,9 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
                                                                     robot().robotIndex(), 1.0, 10000.0);
   postureHome = {{"joint_1", {0}}, {"joint_2", {0.262}}, {"joint_3", {3.14}}, {"joint_4", {-2.269}},
                    {"joint_5", {0}}, {"joint_6", {0.96}},  {"joint_7", {1.57}}};
-
   postureTarget = postureHome;
+  minJerkTask =
+      std::make_shared<mc_tasks::MinimumJerkTask>("FT_sensor_wrench", robots(), robot().robotIndex(), 10000.0);
 
   // Initalize the current task
   taskOrientation_ = Eigen::Quaterniond(1,-1,-1,-1).normalized().toRotationMatrix();
