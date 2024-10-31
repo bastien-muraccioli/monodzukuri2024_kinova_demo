@@ -10,20 +10,20 @@ void MonodzukuriKinovaDemo_Initial::start(mc_control::fsm::Controller & ctl_)
   ctl.datastore().assign<std::string>("ControlMode", "Position");
 
   // Initialize the velocity damper parameters (closed-loop by default)
-  ctl.solver().removeConstraintSet(ctl.dynamicsConstraint);
-  if (ctl.closeLoopVelocityDamper_)
-  {
-    mc_rtc::log::info("[RALExpController] Close Loop Velocity damper is enabled");
-    ctl.dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
-        new mc_solver::DynamicsConstraint(ctl.robots(), 0, {0.1, 0.01, 0.5, ctl.m_, ctl.lambda_}, 0.5, true));
-  }
-  else
-  {
-    mc_rtc::log::info("[RALExpController] Close Loop Velocity damper is disabled");
-    ctl.dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
-      new mc_solver::DynamicsConstraint(ctl.robots(), 0, ctl.solver().dt(), {0.1, 0.01, 0.5}, 0.5, false, true));
-  }
-  ctl.solver().addConstraintSet(ctl.dynamicsConstraint);
+  // ctl.solver().removeConstraintSet(ctl.dynamicsConstraint);
+  // if (ctl.closeLoopVelocityDamper_)
+  // {
+  //   mc_rtc::log::info("[RALExpController] Close Loop Velocity damper is enabled");
+  //   ctl.dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
+  //       new mc_solver::DynamicsConstraint(ctl.robots(), 0, {0.1, 0.01, 0.5, ctl.m_, ctl.lambda_}, 0.5, true));
+  // }
+  // else
+  // {
+  //   mc_rtc::log::info("[RALExpController] Close Loop Velocity damper is disabled");
+  //   ctl.dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
+  //     new mc_solver::DynamicsConstraint(ctl.robots(), 0, ctl.solver().dt(), {0.1, 0.01, 0.5}, 0.5, false, true));
+  // }
+  // ctl.solver().addConstraintSet(ctl.dynamicsConstraint);
 
   // Deactivate feedback from external forces estimator (safer)
   if(ctl.datastore().call<bool>("EF_Estimator::isActive"))
@@ -44,28 +44,46 @@ void MonodzukuriKinovaDemo_Initial::start(mc_control::fsm::Controller & ctl_)
   ctl.solver().removeTask(ctl.compEETask);
 
   ctl.datastore().assign<std::string>("ControlMode", "Position");
+
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Initial state - Position controlled");
 }
 
 bool MonodzukuriKinovaDemo_Initial::run(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  // if(not ctl.waitingForInput)
-  // {
-  //   output("OK");
-  //   return true;
-  // }
-  // return false;
   if(ctl.compPostureTask->eval().norm() < 0.05)
   {
-    if(ctl.sequenceOutput.compare("FINISHED") == 0)
+    if(ctl.changeModeAvailable)
     {
-      ctl.sequenceOutput = "B";
-      // ctl.velLimitCounter = 0;
+      if(ctl.joypadNullSpaceModeFlag)
+      {
+        ctl.changeModeAvailable = false;
+        ctl.changeModeRequest = false;
+        output("NS");
+        return true;
+      }
+      else if(ctl.joypadCompliSinusModeFlag)
+      {
+        ctl.changeModeAvailable = false;
+        ctl.changeModeRequest = false;
+        output("OK");
+        return true;
+      }
+      else if(ctl.joypadComplianceModeFlag)
+      {
+        ctl.changeModeAvailable = false;
+        ctl.changeModeRequest = false;
+        output("COMPLI");
+        return true;
+      }
+      else if(ctl.joypadMinJerkModeFlag)
+      {
+        ctl.changeModeAvailable = false;
+        ctl.changeModeRequest = false;
+        output("OK");
+        return true;
+      }
     }
-
-    output(ctl.sequenceOutput);
-    return true;
   }
   return false;
 }

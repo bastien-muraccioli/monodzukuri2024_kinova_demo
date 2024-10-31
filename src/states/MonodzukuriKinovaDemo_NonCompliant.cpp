@@ -33,7 +33,7 @@ void MonodzukuriKinovaDemo_NonCompliant::start(mc_control::fsm::Controller & ctl
   ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
   ctl.solver().addTask(ctl.compEETask);
 
-  ctl.waitingForInput = true;
+  // ctl.waitingForInput = true;
 
   ctl.datastore().assign<std::string>("ControlMode", "Torque");
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Sensor Testing state - Position controlled");
@@ -43,13 +43,13 @@ bool MonodzukuriKinovaDemo_NonCompliant::run(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  if(not ctl.waitingForInput)
-  {
+  // if(not ctl.waitingForInput)
+  // {
     output("OK");
     return true;
-  }
+  // }
 
-  return false;
+  // return false;
 }
 
 void MonodzukuriKinovaDemo_NonCompliant::teardown(mc_control::fsm::Controller & ctl_)

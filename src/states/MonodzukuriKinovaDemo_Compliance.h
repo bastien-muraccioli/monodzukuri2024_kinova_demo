@@ -14,4 +14,7 @@ struct MonodzukuriKinovaDemo_Compliance : mc_control::fsm::State
   void teardown(mc_control::fsm::Controller & ctl) override;
 
 private:
+
+  void controlModeManager(mc_control::fsm::Controller & ctl);
+  bool isTorqueControl_ = false;
 };

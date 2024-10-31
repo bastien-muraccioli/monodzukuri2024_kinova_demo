@@ -34,11 +34,10 @@ void MonodzukuriKinovaDemo_NSCompliant::start(mc_control::fsm::Controller & ctl_
   ctl.solver().addTask(ctl.compEETask);
 
   ctl.compPostureTask->makeCompliant(true);
-  
-  ctl.sequenceOutput = "A";
-  ctl.waitingForInput = true;
 
   ctl.datastore().assign<std::string>("ControlMode", "Torque");
+  ctl.changeModeAvailable = true;
+  ctl.changeModeRequest = false;
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Sensor Testing state - Position controlled");
 }
 
@@ -46,7 +45,7 @@ bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  if(not ctl.waitingForInput)
+  if(ctl.changeModeRequest)
   {
     output("OK");
     return true;
@@ -58,6 +57,7 @@ bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller & ctl_)
 void MonodzukuriKinovaDemo_NSCompliant::teardown(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+  ctl.joypadNullSpaceModeFlag = false;
 }
 
 EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_NSCompliant", MonodzukuriKinovaDemo_NSCompliant)
