@@ -1,8 +1,8 @@
 #pragma once
 
 #include <mc_control/fsm/State.h>
-#include <mc_tasks/PositionTask.h>
-#include <memory>
+// #include <mc_tasks/PositionTask.h>
+// #include <memory>
 
 struct MonodzukuriKinovaDemo_NSCompliant : mc_control::fsm::State
 {
@@ -16,4 +16,6 @@ struct MonodzukuriKinovaDemo_NSCompliant : mc_control::fsm::State
   void teardown(mc_control::fsm::Controller & ctl) override;
 
 private:
+  void controlModeManager(mc_control::fsm::Controller & ctl);
+  bool isTorqueControl_ = false;
 };

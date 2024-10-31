@@ -37,18 +37,12 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo : public mc_control::f
   std::map<std::string, std::vector<double>> postureTarget;
   Eigen::VectorXd posture_target_log;
 
-  // // State variables
-  // bool moveNextState;
-  // int currentSequence;
-  // bool waitingForInput;
-
   // Task variables
   Eigen::MatrixXd taskOrientation_; // Rotation Matrix
   Eigen::Vector3d taskPosition_;
 
   // Joypad controller
   bool joypadTriggerControlFlag = false;  // When you press the trigger button R2 (RT in the pluggin), you enter in torque control mode otherwise itś position control mode
-  bool joypadTorqueModeFlag = false;      // When you press the x button (A in the pluggin), you change the torque mode between the classical and the new one
   bool joypadComplianceModeFlag = false;  // When you press the right pad button, you enter in compliance mode
   bool joypadNullSpaceModeFlag = false;   // When you press the up pad button, you enter in nullspace mode
   bool joypadCompliSinusModeFlag = false; // When you press the bottom pad button, you enter in compliance sinus mode
@@ -71,12 +65,11 @@ private:
   double dt_;
   bool velocityDamperFlag_;
   double xsiOff_;
-  const double i_ = 0.03;
-  const double s_ = 0.015;
-  // const double d_ = 0.0;
 
   bool upPadLastState_ = false;
   bool downPadLastState_ = false;
   bool rightPadLastState_ = false;
   bool leftPadLastState_ = false;
+  bool r1ButtonLastState_ = false; // Change torque mode in Custom (RB button in the pluggin)
+  bool l1ButtonLastState_ = false; // Change torque mode in Default (LB button in the pluggin)
 };

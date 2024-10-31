@@ -34,10 +34,7 @@ states:
     StepByStep: true
 
     transitions:
-      # - [MonodzukuriKinovaDemo_NonCompliant, OK, MonodzukuriKinovaDemo_NSCompliant, Auto]
-      # - [MonodzukuriKinovaDemo_NSCompliant, OK, MonodzukuriKinovaDemo_Compliance, Auto]
       - [MonodzukuriKinovaDemo_Compliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
-      # - [MonodzukuriKinovaDemo_Compliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
 
   FSM_NSCompliant:
     base: Meta
@@ -45,7 +42,6 @@ states:
     StepByStep: true
 
     transitions:
-      # - [MonodzukuriKinovaDemo_NonCompliant, OK, MonodzukuriKinovaDemo_NSCompliant, Auto]
       - [MonodzukuriKinovaDemo_NSCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
 
 
@@ -55,8 +51,6 @@ transitions:
   - [MonodzukuriKinovaDemo_Compliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
   - [MonodzukuriKinovaDemo_Initial, NS, MonodzukuriKinovaDemo_NSCompliant, Auto]
   - [MonodzukuriKinovaDemo_NSCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
-  # - [FSM_Compliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
-  # - [FSM_NSCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
 
 # Initial state
 init: MonodzukuriKinovaDemo_Initial

@@ -38,20 +38,12 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
   compPostureTask->target(postureTarget);
   solver().addTask(compPostureTask);
 
-  // Initialize the sequence counter
-  // sequenceOutput = "A";
-  // waitingForInput = true;
-
   // Datastore
   datastore().make<std::string>("ControlMode", "Position");
+  datastore().make<std::string>("TorqueMode", "Custom");
   datastore().make_call("getPostureTask", [this]() -> mc_tasks::PostureTaskPtr { return compPostureTask; });
 
-  // // Add GUI for switching states
-  // gui()->addElement({"Controller"},
-  //                   mc_rtc::gui::Label("Current state :", [this]() { return this->executor_.state(); }));
-  // gui()->addElement({"Controller"},
-  //                   mc_rtc::gui::Label("Next state :", [this]() { return this->executor_.next_state(); }));
-  // gui()->addElement({"Controller"}, mc_rtc::gui::Button("Move to next state", [this]() { waitingForInput = false; }));
+  // GUI
   gui()->addElement({"Controller"}, mc_rtc::gui::Checkbox("Close Loop Velocity Damper", 
                     [this]() { return velocityDamperFlag_; }, [this]() { velocityDamperFlag_ = !velocityDamperFlag_; }));
   gui()->addElement({"Controller"}, mc_rtc::gui::NumberInput("m", [this]() { return m_; },
@@ -60,27 +52,6 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
                     [this](double lambda) { lambda_ = lambda; }));
   gui()->addElement({"Controller"}, mc_rtc::gui::Button("SEND", [this]() { updateConstraints(); }));
   
-  // Add log entries
-  // logger().addLogEntry("ControlMode",
-  //                      [this]()
-  //                      {
-  //                        auto mode = datastore().get<std::string>("ControlMode");
-  //                        if(mode.compare("") == 0) return 0;
-  //                        if(mode.compare("Position") == 0) return 1;
-  //                        if(mode.compare("Velocity") == 0) return 2;
-  //                        if(mode.compare("Torque") == 0) return 3;
-  //                        return 0;
-  //                      });
-  // logger().addLogEntry("PostureTarget",
-  //                      [this]()
-  //                      {
-  //                        this->getPostureTarget();
-  //                        return this->posture_target_log;
-  //                      });
-  // logger().addLogEntry("StateIndex", [this]() { return this->stateIndex_; });
-
-  // Initialize the state index
-  // stateIndex_ = 0;
 
   mc_rtc::log::success("MonodzukuriKinovaDemo init done ");
 }
@@ -101,7 +72,6 @@ bool MonodzukuriKinovaDemo::run()
   }
 
   // Joypad manager
-  // bool joystick_online = ctl.datastore().get<bool>("Joystick::connected");
   if(datastore().get<bool>("Joystick::connected"))
   {
     joypadManager();
@@ -109,7 +79,6 @@ bool MonodzukuriKinovaDemo::run()
 
   // Update the solver depending on the control mode
   auto ctrl_mode = datastore().get<std::string>("ControlMode");
-  // mc_rtc::log::info("Control mode: {}", ctrl_mode);
   if(ctrl_mode.compare("Position") == 0)
   {
     return mc_control::fsm::Controller::run(mc_solver::FeedbackType::OpenLoop);
@@ -183,16 +152,24 @@ void MonodzukuriKinovaDemo::getPostureTarget(void)
 
 void MonodzukuriKinovaDemo::joypadManager(void)
 {
-  auto & buttonEventFunc = datastore().get<std::function<bool(joystickButtonInputs button)>>("Joystick::ButtonEvent");
+  auto & buttonFunc = datastore().get<std::function<bool(joystickButtonInputs button)>>("Joystick::Button");
   auto & triggerFunc = datastore().get<std::function<double(joystickAnalogicInputs)>>("Joystick::Trigger");
   bool upPadState = datastore().get<bool>("Joystick::UpPad");
   bool downPadState = datastore().get<bool>("Joystick::DownPad");
   bool leftPadState = datastore().get<bool>("Joystick::LeftPad");
   bool rightPadState = datastore().get<bool>("Joystick::RightPad");
-  
-  if (buttonEventFunc(A)) // X button
+
+  if (buttonFunc(RB) && buttonFunc(RB) != r1ButtonLastState_) // R1 Button
   {
-    joypadTorqueModeFlag = !joypadTorqueModeFlag;
+    joypadTriggerControlFlag = !joypadTriggerControlFlag;
+    datastore().assign<std::string>("TorqueMode", "Custom");
+    mc_rtc::log::info("Torque mode: Custom");
+  }
+  else if (buttonFunc(LB) && buttonFunc(LB) != l1ButtonLastState_) // L1 Button
+  {
+    joypadTriggerControlFlag = !joypadTriggerControlFlag;
+    datastore().assign<std::string>("TorqueMode", "Default");
+    mc_rtc::log::info("Torque mode: Default");
   }
 
   if (triggerFunc(RT) < 1.0) // R2 Trigger
@@ -232,7 +209,8 @@ void MonodzukuriKinovaDemo::joypadManager(void)
       changeModeRequest = true;
     }
   }
-
+  r1ButtonLastState_ = buttonFunc(RB);
+  l1ButtonLastState_ = buttonFunc(LB);
   upPadLastState_ = upPadState;
   downPadLastState_ = downPadState;
   rightPadLastState_ = rightPadState;

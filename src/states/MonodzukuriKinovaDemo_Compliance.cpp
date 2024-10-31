@@ -29,7 +29,7 @@ void MonodzukuriKinovaDemo_Compliance::start(mc_control::fsm::Controller & ctl_)
   ctl.compEETask->positionTask->stiffness(10);
   ctl.compEETask->positionTask->position(ctl.taskPosition_);
   ctl.compEETask->orientationTask->weight(10000);
-  ctl.compEETask->orientationTask->stiffness(10);
+  ctl.compEETask->orientationTask->stiffness(30);
   ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
   ctl.solver().addTask(ctl.compEETask);
 
@@ -88,7 +88,7 @@ void MonodzukuriKinovaDemo_Compliance::controlModeManager(mc_control::fsm::Contr
       ctl.compEETask->positionTask->stiffness(10);
       ctl.compEETask->positionTask->position(ctl.taskPosition_);
       ctl.compEETask->orientationTask->weight(10000);
-      ctl.compEETask->orientationTask->stiffness(10);
+      ctl.compEETask->orientationTask->stiffness(30);
       ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
       ctl.solver().addTask(ctl.compEETask);
 
@@ -100,7 +100,6 @@ void MonodzukuriKinovaDemo_Compliance::controlModeManager(mc_control::fsm::Contr
     {
       ctl.compPostureTask->reset();
       ctl.compPostureTask->stiffness(0.5);
-      // ctl.compPostureTask->target(ctl.robo);
       ctl.compPostureTask->makeCompliant(false);
       ctl.solver().removeTask(ctl.compEETask);
       ctl.datastore().assign<std::string>("ControlMode", "Position");
