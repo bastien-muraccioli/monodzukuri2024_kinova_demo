@@ -3,5 +3,7 @@ add_fsm_state_simple(MonodzukuriKinovaDemo_Compliance)
 add_fsm_state_simple(MonodzukuriKinovaDemo_SinCompliance)
 add_fsm_state_simple(MonodzukuriKinovaDemo_NSCompliant)
 add_fsm_state_simple(MonodzukuriKinovaDemo_MinJerk)
+# add_fsm_state(MonodzukuriKinovaDemo_MinJerk MonodzukuriKinovaDemo_MinJerk.cpp MonodzukuriKinovaDemo_MinJerk.h ../fitts_game.cpp ../fitts_game.h)
+# target_link_libraries(MonodzukuriKinovaDemo_MinJerk PUBLIC GL glfw glut GLEW)
 
 add_fsm_data_directory(data)

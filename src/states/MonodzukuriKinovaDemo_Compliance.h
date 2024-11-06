@@ -17,4 +17,7 @@ private:
 
   void controlModeManager(mc_control::fsm::Controller & ctl);
   bool isTorqueControl_ = false;
+  double transitionTime_= 0.0;
+  double transitionDuration_= 1.0;
+  bool transitionStarted_= false;
 };

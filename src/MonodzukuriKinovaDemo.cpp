@@ -5,7 +5,7 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
 : mc_control::fsm::Controller(rm, dt, config, Backend::TVM)
 {
   // Initialize the velocity damper parameters (closed-loop by default)
-  dt_ = dt;
+  dt_ctrl = dt;
   xsiOff_ = 0.0;
   m_ = 1.8;
   lambda_ = 70.0;
@@ -23,9 +23,8 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
                                                                     robot().robotIndex(), 1.0, 10000.0);
   postureHome = {{"joint_1", {0}}, {"joint_2", {0.262}}, {"joint_3", {3.14}}, {"joint_4", {-2.269}},
                    {"joint_5", {0}}, {"joint_6", {0.96}},  {"joint_7", {1.57}}};
-  postureTarget = postureHome;
-  minJerkTask =
-      std::make_shared<mc_tasks::MinimumJerkTask>("FT_sensor_wrench", robots(), robot().robotIndex(), 10000.0);
+  postureTarget = {{"joint_1", {0}}, {"joint_2", {0.59}}, {"joint_3", {3.14}}, {"joint_4", {-1.56}},
+                   {"joint_5", {0}}, {"joint_6", {0.483}},  {"joint_7", {1.57}}};;
 
   // Initalize the current task
   taskOrientation_ = Eigen::Quaterniond(1,-1,-1,-1).normalized().toRotationMatrix();
@@ -36,8 +35,15 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
   compPostureTask->reset();
   compPostureTask->stiffness(0.0);
   compPostureTask->damping(4.0);
-  compPostureTask->target(postureTarget);
+  compPostureTask->target(postureHome);
   solver().addTask(compPostureTask);
+
+  //OpenGL GUI
+  gameThread = std::thread(std::bind([this]() { game.run(); }));
+  game.setRobotRadius(robot_radius);
+  game.addToLogger(logger());
+  while(not game.getNewTargetBool())
+    ;
 
   // Datastore
   datastore().make<std::string>("ControlMode", "Position");
@@ -113,7 +119,7 @@ void MonodzukuriKinovaDemo::updateConstraints(bool closeLoop)
   {
     solver().removeConstraintSet(dynamicsConstraint);
     dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
-      new mc_solver::DynamicsConstraint(robots(), 0, dt_, {0.1, 0.01, 0.5}, 0.9, false, true));
+      new mc_solver::DynamicsConstraint(robots(), 0, dt_ctrl, {0.1, 0.01, 0.5}, 0.9, false, true));
     solver().addConstraintSet(dynamicsConstraint);
     selfCollisionConstraint->setCollisionsDampers(solver(), {0.0, 0.0});
 
@@ -127,7 +133,7 @@ void MonodzukuriKinovaDemo::updateConstraints(void)
     {
       solver().removeConstraintSet(dynamicsConstraint);
       dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
-        new mc_solver::DynamicsConstraint(robots(), 0, dt_, {0.1, 0.01, 0.5}, 0.9, false, true));
+        new mc_solver::DynamicsConstraint(robots(), 0, dt_ctrl, {0.1, 0.01, 0.5}, 0.9, false, true));
       solver().addConstraintSet(dynamicsConstraint);
       selfCollisionConstraint->setCollisionsDampers(solver(), {0.0, 0.0});
       velocityDamperFlag_ = false;
@@ -160,15 +166,18 @@ void MonodzukuriKinovaDemo::joypadManager(void)
   bool leftPadState = datastore().get<bool>("Joystick::LeftPad");
   bool rightPadState = datastore().get<bool>("Joystick::RightPad");
 
+  if (buttonFunc(A) && buttonFunc(A) != xButtonLastState_) // X Button
+  {
+    activateFlag = !activateFlag;
+  }
+
   if (buttonFunc(RB) && buttonFunc(RB) != r1ButtonLastState_) // R1 Button
   {
-    joypadTriggerControlFlag = !joypadTriggerControlFlag;
     datastore().assign<std::string>("TorqueMode", "Custom");
     mc_rtc::log::info("Torque mode: Custom");
   }
   else if (buttonFunc(LB) && buttonFunc(LB) != l1ButtonLastState_) // L1 Button
   {
-    joypadTriggerControlFlag = !joypadTriggerControlFlag;
     datastore().assign<std::string>("TorqueMode", "Default");
     mc_rtc::log::info("Torque mode: Default");
   }
@@ -216,6 +225,7 @@ void MonodzukuriKinovaDemo::joypadManager(void)
   downPadLastState_ = downPadState;
   rightPadLastState_ = rightPadState;
   leftPadLastState_ = leftPadState;
+  xButtonLastState_ = buttonFunc(A);
   // mc_rtc::log::info("TorqueMode {}; NullSpaceMode {}; CompliSinusMode {}; ComplianceMode {}; MinJerkMode {}", 
   //                   joypadTorqueModeFlag, joypadNullSpaceModeFlag, joypadCompliSinusModeFlag, joypadComplianceModeFlag, joypadMinJerkModeFlag);
 }

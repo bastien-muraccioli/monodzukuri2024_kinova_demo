@@ -14,17 +14,15 @@ struct MonodzukuriKinovaDemo_SinCompliance : mc_control::fsm::State
   void teardown(mc_control::fsm::Controller & ctl) override;
 
 private:
-
-  // void controlModeManager(mc_control::fsm::Controller & ctl);
-  // bool isTorqueControl_ = false;
-  bool start_moving_;
-  bool init_;
-  double ctlTime_;
-  double omega_;
-  double R_;
-  double minY_;
-  double maxY_;
-  double yValue_;
-  bool yDirection_;
-  double dt_ = 0.001;
+  bool start_moving_=false;
+  double ctlTime_=0;
+  double omega_= 3;
+  double R_=0.10;
+  double minY_=-0.4;
+  double maxY_=0.05;
+  double yValue_=0.0;
+  bool yDirection_= false;
+  double transitionTime_= 0.0;
+  double transitionDuration_= 1.0;
+  bool transitionStarted_= false;
 };

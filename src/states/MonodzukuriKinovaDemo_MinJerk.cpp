@@ -8,7 +8,7 @@ void MonodzukuriKinovaDemo_MinJerk::configure(const mc_rtc::Configuration & conf
 void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  auto & robot = ctl.robot();
+  // auto & robot = ctl.robot();
 
   // Disable feedback from external forces estimator (safer)
   if(ctl.datastore().call<bool>("EF_Estimator::isActive"))
@@ -20,60 +20,54 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller & ctl_)
   {
     ctl.datastore().call("EF_Estimator::toggleForceSensor");
   }
-  ctl.datastore().call<void, double>("EF_Estimator::setGain", HIGH_RESIDUAL_GAIN);
+  ctl.datastore().call<void, double>("EF_Estimator::setGain", FITTS_RESIDUAL_GAIN);
 
-  initPos_ = robot.bodyPosW("FT_sensor_wrench").translation();
+  mj_task = std::make_shared<mc_tasks::MinimumJerkTask>("FT_sensor_mounting", ctl.robots(), ctl.robot().robotIndex(),
+                                                        10000.0);
 
-  Eigen::VectorXd W_1(9);
-  W_1 << 1e7, 1e7, 1e7, 1e5, 1e5, 1e5, 1e2, 1e2, 1e2;
-  // W_1 << 1e2, 1e2, 1e2, 1e3, 1e3, 1e3, 1e1, 1e1, 1e1;
-  Eigen::VectorXd W_2(8);
-  W_2 << 1e0, 1e0, 1e0, 5 * 1e3, 2 * 1e3, 6 * 1e2, 6 * 1e2, 6 * 1e2;
-  // W_2 << 1e0, 1e0, 1e0, 1e2, 1e1, 1e1, 1e1, 1e1;
-  ctl.minJerkTask->W_1(W_1);
-  ctl.minJerkTask->W_2(W_2);
+  Eigen::Vector3d LQR_Q;
+  LQR_Q << 1e8, 1e6, 1e3;
+  mj_task->LQR_Q(LQR_Q);
+  mj_task->LQR_R(10);
+  mj_task->W_e(Eigen::Vector3d({1, 1, 1}));
+  mj_task->W_u(Eigen::Vector4d(1, 1000, 1000, 1000));
+  mj_task->fitts_b(0.31);
+  mj_task->fitts_a(0.19);
+  mj_task->react_time(0.25);
 
-  ctl.minJerkTask->setTarget(initPos_ + Eigen::Vector3d(0.1, 0.15, 0.0));
   ctl.compPostureTask->stiffness(0.0);
   ctl.compPostureTask->damping(1.0);
   ctl.compPostureTask->makeCompliant(true);
-
-  ctl.solver().addTask(ctl.minJerkTask);
 
   oriTask_ = std::make_shared<mc_tasks::OrientationTask>("FT_sensor_wrench", ctl.robots(), ctl.robot().robotIndex(),
                                                          20.0, 10000.0);
   oriTask_->orientation(Eigen::Quaterniond(-0.5, 0.5, 0.5, 0.5).toRotationMatrix());
   ctl.solver().addTask(oriTask_);
 
+  init_pose = ctl.robot().bodyPosW("FT_sensor_wrench").translation() + Eigen::Vector3d(0.1, 0.0, 0.0);
+  ctl.target_pose.first = init_pose(1);
+  ctl.target_pose.second = init_pose(2);
 
+  ctl.compPostureTask->stiffness(100);
+  ctl.compPostureTask->makeCompliant(false);
 
-  // // Setting gain of posture task for torque control mode
-  // ctl.compPostureTask->stiffness(0.0);
-  // ctl.compPostureTask->damping(4.0);
-  // ctl.compPostureTask->weight(1);
-
-  // ctl.compEETask->reset();
-  // ctl.compEETask->positionTask->weight(10000);
-  // ctl.compEETask->positionTask->stiffness(10);
-  // ctl.compEETask->positionTask->position(ctl.taskPosition_);
-  // ctl.compEETask->orientationTask->weight(10000);
-  // ctl.compEETask->orientationTask->stiffness(30);
-  // ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
-  // ctl.solver().addTask(ctl.compEETask);
-
-  // ctl.compPostureTask->makeCompliant(true);
+  controlled_frame = &ctl.robot().frame("FT_sensor_mounting");
 
   ctl.datastore().assign<std::string>("ControlMode", "Torque");
 
-  init_ = true;
+  auto new_target_pos = ctl.game.getTargetPos();
+  float new_target_radius = ctl.game.getTargetRadius();
+  auto win_size = ctl.game.getWinSize();
+  auto robot_radius = ctl.game.getRobotRadius();
+  target_circle(0) = ctl.target_pose.first - robot_radius + new_target_pos.first * (2.0 * robot_radius) / win_size.first;
+  target_circle(1) = ctl.target_pose.second - robot_radius + new_target_pos.second * (2.0 * robot_radius) / win_size.second;
+  double W = 2.0 * new_target_radius * (2.0 * robot_radius) / win_size.first;
+  mc_rtc::log::info("New W = {}, radius = {}", W, new_target_radius);
+  mj_task->setTarget(Eigen::Vector3d(init_pose(0), target_circle(0), target_circle(1)));
+  mj_task->W(W);
+  mc_rtc::log::info("Target: {}", Eigen::Vector3d(init_pose(0), target_circle(0), target_circle(1)));
 
-  // ctl.compPostureTask->reset();
-  // ctl.compPostureTask->stiffness(0.5);
-  // // ctl.compPostureTask->target(ctl.robot().posture());
-  // ctl.compPostureTask->makeCompliant(false);
-  // ctl.solver().removeTask(ctl.compEETask);
-  // ctl.datastore().assign<std::string>("ControlMode", "Position");
-
+  ctl.activateFlag = false;
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Minimum Jerk mode initialized");
@@ -82,74 +76,77 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller & ctl_)
 bool MonodzukuriKinovaDemo_MinJerk::run(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  // mc_rtc::log::info("[Compliance mode] changeModeAvailable: {}, changeModeRequest: {}", ctl.changeModeAvailable, ctl.changeModeRequest);
+
+  // Exit State
   if(ctl.changeModeRequest)
   {
-    output("OK");
-    return true;
+    transitionTime_ += ctl.dt_ctrl;
+    if(!transitionStarted_)
+    {
+      ctl.compEETask->reset();
+      ctl.compEETask->positionTask->weight(10000);
+      ctl.compEETask->positionTask->refVel(Eigen::Vector3d(0, 0, 0));
+      ctl.solver().addTask(ctl.compEETask);
+      transitionStarted_ = true;
+    }
+    if(transitionTime_ > transitionDuration_)
+    {
+      output("OK");
+      return true;
+    }
   }
 
-   if(ctl.minJerkTask->eval().norm() < 0.03 and ctl.minJerkTask->speed().norm() < 0.001)
+  // While the state is running
+  if(!transitionStarted_)
   {
-    mc_rtc::log::info("Target reached switching target");
-    if(init_)
+    if(ctl.activateFlag && !start_moving_)
     {
-      ctl.minJerkTask->setTarget(initPos_ + Eigen::Vector3d(0.1, -0.15, 0.0));
-      init_ = false;
+      ctl.solver().addTask(mj_task);
+      start_moving_  = true;
     }
-    else
+
+    std::string bodyName = controlled_frame->body();
+    sva::PTransformd transform(ctl.robot().bodyPosW(bodyName));
+    Eigen::Vector3d pose = ctl.robot().frame("FT_sensor_mounting").position().translation();
+    Eigen::Vector3d vel = ctl.robot().frame("FT_sensor_mounting").velocity().linear();
+    Eigen::Vector3d acc = transform.rotation().transpose() * ctl.robot().bodyAccB(bodyName).linear()
+                          + ctl.robot().bodyVelW(bodyName).angular().cross(vel);
+    ctl.game.setRobotPosition(pose(1), pose(2), ctl.target_pose.first, ctl.target_pose.second);
+    if(ctl.game.getNewTargetBool())
     {
-      ctl.minJerkTask->setTarget(initPos_ + Eigen::Vector3d(0.1, 0.15, 0.0));
-      init_ = true;
+      save_last_target(ctl);
     }
   }
-
-  // controlModeManager(ctl);
-
   return false;
 }
 
 void MonodzukuriKinovaDemo_MinJerk::teardown(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  ctl.joypadComplianceModeFlag = false;
+  ctl.game.setRobotRadius(ctl.robot_radius);
+  ctl.solver().removeTask(mj_task);
+  ctl.solver().removeTask(oriTask_);
+  ctl.solver().removeTask(ctl.compEETask);
 }
 
-void MonodzukuriKinovaDemo_MinJerk::controlModeManager(mc_control::fsm::Controller & ctl_)
+void MonodzukuriKinovaDemo_MinJerk::save_last_target(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  // mc_rtc::log::info("[Compliance mode] joypadTriggerControlFlag: {}, isTorqueControl_: {}", ctl.joypadTriggerControlFlag, isTorqueControl_);
-  if(ctl.joypadTriggerControlFlag != isTorqueControl_)
-  {
-    isTorqueControl_ = !isTorqueControl_;
-    if(isTorqueControl_)
-    {
-      ctl.compPostureTask->stiffness(0.0);
-      ctl.compPostureTask->damping(4.0);
-      ctl.compPostureTask->weight(1);
+  auto robot_radius = ctl.game.getRobotRadius();
+  auto win_size = ctl.game.getWinSize();
+  auto new_target_pos = ctl.game.getTargetPos();
+  float new_target_radius = ctl.game.getTargetRadius();
+  target_circle(0) = ctl.target_pose.first - robot_radius + new_target_pos.first * (2.0 * robot_radius) / win_size.first;
+  target_circle(1) = ctl.target_pose.second - robot_radius + new_target_pos.second * (2.0 * robot_radius) / win_size.second;
+  double W = 2.0 * new_target_radius * (2.0 * robot_radius) / win_size.first;
+  mc_rtc::log::info("New W = {}, radius = {}", W, new_target_radius);
+  mj_task->setTarget(Eigen::Vector3d(init_pose(0), target_circle(0), target_circle(1)));
+  mj_task->W(W);
+  projection_vector = target_circle - controlled_frame->position().translation().tail<2>();
 
-      ctl.compEETask->reset();
-      ctl.compEETask->positionTask->weight(10000);
-      ctl.compEETask->positionTask->stiffness(10);
-      ctl.compEETask->positionTask->position(ctl.taskPosition_);
-      ctl.compEETask->orientationTask->weight(10000);
-      ctl.compEETask->orientationTask->stiffness(30);
-      ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
-      ctl.solver().addTask(ctl.compEETask);
-
-      ctl.compPostureTask->makeCompliant(true);
-
-      ctl.datastore().assign<std::string>("ControlMode", "Torque");
-    }
-    else
-    {
-      ctl.compPostureTask->reset();
-      ctl.compPostureTask->stiffness(0.5);
-      ctl.compPostureTask->makeCompliant(false);
-      ctl.solver().removeTask(ctl.compEETask);
-      ctl.datastore().assign<std::string>("ControlMode", "Position");
-    }
-  }
+  FittsData data = ctl.game.getLastData();
+  ctl.game.clearNewTargetBool();
 }
+
 
 EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_MinJerk", MonodzukuriKinovaDemo_MinJerk)

@@ -1,7 +1,10 @@
 #pragma once
 
 #include <mc_control/fsm/State.h>
+
 #include <mc_tasks/OrientationTask.h>
+
+#include <mc_tasks/MinimumJerkTask.h>
 
 struct MonodzukuriKinovaDemo_MinJerk : mc_control::fsm::State
 {
@@ -14,13 +17,20 @@ struct MonodzukuriKinovaDemo_MinJerk : mc_control::fsm::State
 
   void teardown(mc_control::fsm::Controller & ctl) override;
 
+  void save_last_target(mc_control::fsm::Controller & ctl);
+
 private:
-
-  void controlModeManager(mc_control::fsm::Controller & ctl);
-  bool isTorqueControl_ = false;
-  Eigen::Vector3d initPos_;
-  bool init_;
-  // bool gui_switch_;
-
+  std::shared_ptr<mc_tasks::MinimumJerkTask> mj_task;
   std::shared_ptr<mc_tasks::OrientationTask> oriTask_;
+
+  Eigen::Vector3d init_pose;
+  Eigen::Vector2d target_circle;
+  Eigen::Vector2d projection_vector;
+  mc_rbdyn::RobotFrame * controlled_frame;
+
+  bool start_moving_=false;
+
+  double transitionTime_= 0.0;
+  double transitionDuration_= 1.0;
+  bool transitionStarted_= false;
 };
