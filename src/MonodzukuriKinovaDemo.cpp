@@ -1,5 +1,4 @@
 #include "MonodzukuriKinovaDemo.h"
-#include <mc_joystick_plugin/joystick_inputs.h>
 
 MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config, Backend::TVM)
@@ -24,7 +23,9 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
   postureHome = {{"joint_1", {0}}, {"joint_2", {0.262}}, {"joint_3", {3.14}}, {"joint_4", {-2.269}},
                    {"joint_5", {0}}, {"joint_6", {0.96}},  {"joint_7", {1.57}}};
   postureTarget = {{"joint_1", {0}}, {"joint_2", {0.59}}, {"joint_3", {3.14}}, {"joint_4", {-1.56}},
-                   {"joint_5", {0}}, {"joint_6", {0.483}},  {"joint_7", {1.57}}};;
+                   {"joint_5", {0}}, {"joint_6", {0.483}},  {"joint_7", {1.57}}};
+  postureCalibration = {{"joint_1", {0}}, {"joint_2", {0.32}}, {"joint_3", {3.14}}, {"joint_4", {-1.46}},
+                   {"joint_5", {0}}, {"joint_6", {-1.33}},  {"joint_7", {1.57}}};
 
   // Initalize the current task
   taskOrientation_ = Eigen::Quaterniond(1,-1,-1,-1).normalized().toRotationMatrix();
@@ -39,6 +40,7 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
   solver().addTask(compPostureTask);
 
   //OpenGL GUI
+  // game.run();
   gameThread = std::thread(std::bind([this]() { game.run(); }));
   game.setRobotRadius(robot_radius);
   game.addToLogger(logger());
@@ -58,6 +60,11 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
   gui()->addElement({"Controller"}, mc_rtc::gui::NumberInput("lambda", [this]() { return lambda_; },
                     [this](double lambda) { lambda_ = lambda; }));
   gui()->addElement({"Controller"}, mc_rtc::gui::Button("SEND", [this]() { updateConstraints(); }));
+
+  gui()->addElement({"Controller"}, mc_rtc::gui::Checkbox("Trigger", 
+                  [this]() { return joypadTriggerControlFlag; }, [this]() { joypadTriggerControlFlag = !joypadTriggerControlFlag; }));
+  gui()->addElement({"Controller"}, mc_rtc::gui::Checkbox("Activate", 
+                  [this]() { return activateFlag; }, [this]() { activateFlag = !activateFlag; }));
   
 
   mc_rtc::log::success("MonodzukuriKinovaDemo init done ");
@@ -175,11 +182,13 @@ void MonodzukuriKinovaDemo::joypadManager(void)
   {
     datastore().assign<std::string>("TorqueMode", "Custom");
     mc_rtc::log::info("Torque mode: Custom");
+    game.setJRLTorque(true);
   }
   else if (buttonFunc(LB) && buttonFunc(LB) != l1ButtonLastState_) // L1 Button
   {
     datastore().assign<std::string>("TorqueMode", "Default");
     mc_rtc::log::info("Torque mode: Default");
+    game.setJRLTorque(false);
   }
 
   if (triggerFunc(RT) < 1.0) // R2 Trigger

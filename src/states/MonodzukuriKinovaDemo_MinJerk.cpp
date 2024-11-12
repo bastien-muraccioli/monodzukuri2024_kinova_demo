@@ -70,6 +70,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller & ctl_)
   ctl.activateFlag = false;
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
+  ctl.game.setControlMode(3);
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Minimum Jerk mode initialized");
 }
 

@@ -46,6 +46,7 @@ void MonodzukuriKinovaDemo_Compliance::start(mc_control::fsm::Controller & ctl_)
 
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
+  ctl.game.setControlMode(2);
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Compliance mode initialized");
 }
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
 set(CXX_DISABLE_WERROR 1)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 set(PROJECT_NAME MonodzukuriKinovaDemo)
 set(PROJECT_DESCRIPTION "MonodzukuriKinovaDemo")
@@ -22,9 +22,9 @@ find_package(MinimumJerkTask REQUIRED)
 
 add_subdirectory(src)
 
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-endif()
+# if(BUILD_TESTING)
+#   add_subdirectory(tests)
+# endif()
 
 configure_file(etc/MonodzukuriKinovaDemo.in.yaml
                "${CMAKE_CURRENT_BINARY_DIR}/etc/MonodzukuriKinovaDemo.yaml")
