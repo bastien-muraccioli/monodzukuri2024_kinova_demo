@@ -33,6 +33,8 @@ void MonodzukuriKinovaDemo_NSCompliant::start(mc_control::fsm::Controller & ctl_
   ctl.changeModeRequest = false;
   ctl.activateFlag = false;
 
+  ctl.game.setControlMode(4);
+
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Sensor Testing state - Position controlled");
 }
 
@@ -68,7 +70,7 @@ bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller & ctl_)
   if(start_moving_ && !transitionStarted_)
   {
     controlModeManager(ctl);
-    if(dualComplianceFlag_ && isTorqueControl_)
+    if(dualComplianceFlag_)
     {
       dualComplianceLoop(ctl);
     }
@@ -93,30 +95,30 @@ void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(mc_control::fsm::Cont
   {
     mc_rtc::log::info("[Null Space mode] Dual Compliance activated");
     dualComplianceFlag_ = true;
+    ctl.game.setControlMode(1);
   }
   else if(dualComplianceFlag_ && !ctl.activateFlag)
   {
     mc_rtc::log::info("[Null Space mode] Dual Compliance deactivated");
     dualComplianceFlag_ = false;
+    ctl.game.setControlMode(4);
   }
 
   // If press the R2 trigger, activate torque control, if not, activate position control
   if(ctl.joypadTriggerControlFlag != isTorqueControl_)
   {
     isTorqueControl_ = !isTorqueControl_;
-    if(isTorqueControl_)
+    if(isTorqueControl_ and !dualComplianceFlag_)
     {
-      if(!dualComplianceFlag_)
+      if(!ctl.datastore().call<bool>("EF_Estimator::isActive"))
       {
-        if(!ctl.datastore().call<bool>("EF_Estimator::isActive"))
-        {
-          ctl.datastore().call("EF_Estimator::toggleActive");
-        }
-        nullSpaceControl(ctl);
+        ctl.datastore().call("EF_Estimator::toggleActive");
       }
+      nullSpaceControl(ctl);
+    
       ctl.datastore().assign<std::string>("ControlMode", "Torque");
     }
-    else
+    else if(!isTorqueControl_ and !dualComplianceFlag_)
     {
       // Position control
       ctl.solver().removeTask(admittance_task);

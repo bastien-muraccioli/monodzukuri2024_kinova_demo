@@ -2,9 +2,9 @@ set(controller_SRC MonodzukuriKinovaDemo.cpp)
 
 set(controller_HDR MonodzukuriKinovaDemo.h)
 
-set(OpenGL_GUI_SRC fitts_game.cpp)
+set(OpenGL_GUI_SRC ui.cpp)
 
-set(OpenGL_GUI_HDR fitts_game.h)
+set(OpenGL_GUI_HDR ui.h)# stb_image.h)
 
 add_library(${PROJECT_NAME} SHARED ${controller_SRC} ${controller_HDR} ${OpenGL_GUI_SRC} ${OpenGL_GUI_HDR})
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS
@@ -25,5 +25,3 @@ add_controller(${PROJECT_NAME}_controller lib.cpp "")
 target_link_libraries(${PROJECT_NAME}_controller PUBLIC ${PROJECT_NAME})
 
 add_subdirectory(states)
-
-

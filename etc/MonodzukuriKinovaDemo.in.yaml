@@ -55,6 +55,8 @@ transitions:
   - [MonodzukuriKinovaDemo_MinJerk, OK, MonodzukuriKinovaDemo_Initial, Auto]
   - [MonodzukuriKinovaDemo_Initial, SIN, MonodzukuriKinovaDemo_SinCompliance, Auto]
   - [MonodzukuriKinovaDemo_SinCompliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
+  # - [MonodzukuriKinovaDemo_Initial, OK, MonodzukuriKinovaDemo_Calibration, Auto]
+  # - [MonodzukuriKinovaDemo_Calibration, OK, MonodzukuriKinovaDemo_Initial, Auto]
 
 # Initial state
 init: MonodzukuriKinovaDemo_Initial

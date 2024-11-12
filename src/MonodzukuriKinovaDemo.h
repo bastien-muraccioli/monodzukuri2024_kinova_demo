@@ -5,12 +5,12 @@
 #include <mc_tasks/CompliantEndEffectorTask.h>
 #include <mc_tasks/CompliantPostureTask.h>
 #include <mc_rbdyn/Collision.h>
+#include <mc_joystick_plugin/joystick_inputs.h>
 
 #include "api.h"
 
 #include <thread>
-#include "fitts_game.h"
-
+#include "ui.h"
 
 #define FITTS_RESIDUAL_GAIN 30.0
 #define HIGH_RESIDUAL_GAIN 10.0
@@ -41,6 +41,7 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo : public mc_control::f
   // Targets
   std::map<std::string, std::vector<double>> postureHome;
   std::map<std::string, std::vector<double>> postureTarget;
+  std::map<std::string, std::vector<double>> postureCalibration;
   Eigen::VectorXd posture_target_log;
 
   // Task variables
@@ -48,7 +49,7 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo : public mc_control::f
   Eigen::Vector3d taskPosition_;
 
   // OpenGL GUI
-  FittsGame game;
+  FittsGame game = FittsGame();
   std::thread gameThread;
   double robot_radius = 0.2;
   position target_pose;

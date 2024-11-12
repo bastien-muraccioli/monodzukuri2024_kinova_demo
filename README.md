@@ -1,6 +1,11 @@
 # monodzukuri2024_kinova_demo
 Kinova Controller mc_rtc, fsm based for the Osaka Monodzukuri 2024 expo.
 
+Please make sure to have OpenGL and GLFW installed:
+sudo apt-get install libglew-dev libglm-dev mesa-utils libglfw3 libfreetype-dev libglfw3-dev
+
+
+
 This controller depends on:
 - [mc_rtc](https://github.com/bastien-muraccioli/mc_rtc/tree/topic/external-forces-aware-qp)
 - [mc_kinova](https://github.com/mathieu-celerier/mc_kinova/tree/topic/bota_ft_sensor)
