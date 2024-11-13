@@ -136,6 +136,7 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
       }
       admittanceControl(ctl);
       admittanceFlag_ = true;
+      ctl.datastore().assign<std::string>("ControlMode", "Torque");
     }
   } else {
     if (admittanceFlag_) {
