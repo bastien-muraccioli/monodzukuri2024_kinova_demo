@@ -16,6 +16,7 @@ struct MonodzukuriKinovaDemo_SinCompliance : mc_control::fsm::State
 private:
   void controlModeManager(mc_control::fsm::Controller & ctl);
   bool isTorqueControl_ = false;
+  bool isCompliantControl_ = true;
   bool start_moving_=false;
   double ctlTime_=0;
   double omega_= 3;
@@ -27,4 +28,8 @@ private:
   double transitionTime_= 0.0;
   double transitionDuration_= 1.0;
   bool transitionStarted_= false;
+  double posTorqueTransitionTime_= 0.0;
+  double posTorqueTransitionDuration_= 1.0;
+  bool posTorqueTransitionStarted_= false;
+
 };

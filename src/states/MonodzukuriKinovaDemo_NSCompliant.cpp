@@ -62,6 +62,11 @@ bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller &ctl_) {
       !transitionStarted_) {
     mc_rtc::log::info("[Null Space mode] Start moving");
     start_moving_ = true;
+    ctl.datastore().assign<std::string>("ControlMode", "Torque");
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+        ctl.datastore().call("EF_Estimator::toggleActive");
+      }
+    nullSpaceControl(ctl);
   }
 
   // While the state is running
@@ -94,30 +99,33 @@ void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(
     mc_rtc::log::info("[Null Space mode] Dual Compliance deactivated");
     dualComplianceFlag_ = false;
     ctl.game.setControlMode(4);
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+        ctl.datastore().call("EF_Estimator::toggleActive");
+      }
+    nullSpaceControl(ctl);
   }
 
   // If press the R2 trigger, activate torque control, if not, activate position
   // control
-  if (ctl.joypadTriggerControlFlag != isTorqueControl_) {
-    isTorqueControl_ = !isTorqueControl_;
-    if (isTorqueControl_ and !dualComplianceFlag_) {
-      if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-        ctl.datastore().call("EF_Estimator::toggleActive");
-      }
-      nullSpaceControl(ctl);
+  // if (ctl.joypadTriggerControlFlag != isTorqueControl_) {
+  //   isTorqueControl_ = !isTorqueControl_;
+  //   if (isTorqueControl_ and !dualComplianceFlag_) {
+  //     if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+  //       ctl.datastore().call("EF_Estimator::toggleActive");
+  //     }
+  //     nullSpaceControl(ctl);
 
-      ctl.datastore().assign<std::string>("ControlMode", "Torque");
-    } else if (!isTorqueControl_ and !dualComplianceFlag_) {
-      // Position control
-      ctl.solver().removeTask(admittance_task);
-      ctl.solver().removeTask(ctl.compEETask);
-      ctl.compPostureTask->reset();
-      ctl.compPostureTask->stiffness(0.5);
-      ctl.compPostureTask->makeCompliant(false);
+      // ctl.datastore().assign<std::string>("ControlMode", "Torque");
+    // } else if (!isTorqueControl_ and !dualComplianceFlag_) {
+    //   // Position control
+    //   ctl.solver().removeTask(admittance_task);
+    //   ctl.solver().removeTask(ctl.compEETask);
+    //   ctl.compPostureTask->reset();
+    //   ctl.compPostureTask->stiffness(0.5);
+    //   ctl.compPostureTask->makeCompliant(false);
 
-      ctl.datastore().assign<std::string>("ControlMode", "Position");
-    }
-  }
+    //   ctl.datastore().assign<std::string>("ControlMode", "Position");
+    
 }
 
 void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
@@ -126,6 +134,7 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
 
   // Activate the admittance control if the force is below the threshold
   currentForce_ = ctl.robot().forceSensor("EEForceSensor").force().norm();
+  // currentForce_ = ctl.robot().forceSensor("EEForceSensor").FT_sensor_wrench().norm();
   // mc_rtc::log::info("[Null Space mode] Current force: {}", currentForce_);
 
   if (currentForce_ > dualComplianceThreshold_) {

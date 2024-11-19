@@ -23,10 +23,10 @@ private:
 
   bool dualComplianceFlag_ = false;
   bool admittanceFlag_ = false;
-  double dualComplianceThreshold_ = 7.0;
+  double dualComplianceThreshold_ = 8.0;
   double currentForce_ = 0.0;
 
-  bool isTorqueControl_ = false;
+  bool isPositionControl_ = false;
   bool start_moving_ = false;
   double transitionTime_ = 0.0;
   double transitionDuration_ = 1.0;

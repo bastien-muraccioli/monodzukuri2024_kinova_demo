@@ -65,7 +65,9 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo : public mc_control::f
   // When you press the X button (A in the pluggin), 
     // In MinJerkState: you activate the Fitts Law experiment
     // In NullSpaceState: you activate the Double Compliance
-  bool activateFlag = false;              
+  bool activateFlag = false;   
+
+  bool compliantFlag = false;           
 
   bool changeModeAvailable = true;        
   bool changeModeRequest = false;
@@ -93,4 +95,5 @@ private:
   bool r1ButtonLastState_ = false; // Change torque mode in Custom (RB button in the pluggin)
   bool l1ButtonLastState_ = false; // Change torque mode in Default (LB button in the pluggin)
   bool xButtonLastState_ = false;
+  bool triangleButtonLastState_ = false;
 };

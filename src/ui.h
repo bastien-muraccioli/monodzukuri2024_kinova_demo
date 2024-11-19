@@ -1,6 +1,6 @@
 #pragma once
 
-#include <filesystem> 
+#include <filesystem>
 
 // clang-format off
 #include <mc_rtc/log/Logger.h>
@@ -13,8 +13,8 @@
 #include <GL/glut.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <utility>
 
@@ -25,27 +25,26 @@
 #define FC_MODE 2
 #define MJ_MODE 3
 #define NS_MODE 4
-
+#define INTRO 5
+#define MCNS_MODE 6
 
 typedef std::pair<float, float> position;
 
-struct FittsData
-{
+struct FittsData {
   int idx;
   float distance;
   float radius;
   float reach_time;
 };
 
-class FittsGame
-{
+class FittsGame {
 public:
   FittsGame();
   void run();
 
   // Getters and setters
   std::pair<int, int> getWinSize() const;
-  void setWinSize(const std::pair<int, int> & size);
+  void setWinSize(const std::pair<int, int> &size);
   float getRobotRadius() const;
   void setRobotRadius(float radius);
   void setRobotPosition(float x, float y, float offset_x, float offset_y);
@@ -64,41 +63,44 @@ public:
   void setControlMode(int mode);
   void setJRLTorque(bool jrl_torque);
 
-  void addToLogger(mc_rtc::Logger & logger);
+  void addToLogger(mc_rtc::Logger &logger);
 
 private:
   // Window related
   std::pair<int, int> win_size;
   std::pair<int, int> win_fitts_size;
-  GLFWwindow * window;
+  GLFWwindow *window;
   GLuint circleVAO;
   GLuint circleVBO;
 
+  GLuint introID; // Background intro
 
   GLuint mc_jrlID; // Background Moving Compliance, JRL torque
   GLuint dc_jrlID; // Background Dual Compliance, JRL torque
   GLuint fc_jrlID; // Background Full Compliance, JRL torque
   GLuint mj_jrlID; // Background MinJerk, JRL torque
   GLuint ns_jrlID; // Background Null Space, JRL torque
+  GLuint mcns_jrlID; // Background Moving Null Space, JRL torque
 
   GLuint mc_defaultID; // Background Moving Compliance, Default torque
   GLuint dc_defaultID; // Background Dual Compliance, Default torque
   GLuint fc_defaultID; // Background Full Compliance, Default torque
   GLuint mj_defaultID; // Background MinJerk, Default torque
   GLuint ns_defaultID; // Background Null Space, Default torque
+  GLuint mcns_defaultID; // Background Moving Null Space, Default torque
 
   void manageBackground(void);
 
   void deleteTextures(void);
   void loadingTextures(void);
 
-  GLuint loadTexture(const char* filename);
+  GLuint loadTexture(const char *filename);
   void renderTexture(GLuint texture, float x, float y, float scale);
 
-  std::string getPath(const std::string & filename);
+  std::string getPath(const std::string &filename);
 
-  int control_mode = 0;
-  bool jrl_torque = false;
+  int control_mode = INTRO;
+  bool jrl_torque = true;
 
   //
   position pointer_pos;
@@ -109,7 +111,7 @@ private:
   float target_radius;
   int target_idx;
   float target_radius_max = 30;
-  float target_radius_min = 100.0;
+  float target_radius_min = 80.0;
   double proj;
 
   int min_fitts_x;
@@ -135,7 +137,7 @@ private:
   void initCircle(float radius, int num_segments);
   void drawCircle(position pos, float r, int num_segments);
   void deleteCircle(void);
-  void renderText(float x, float y, const std::string & text, void * font);
+  void renderText(float x, float y, const std::string &text, void *font);
   void renderFPS(float x, float y, double fps);
   void renderTargetIdx(float x, float y, int idx);
 };

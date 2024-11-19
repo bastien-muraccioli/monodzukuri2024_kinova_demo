@@ -50,6 +50,7 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
   // Datastore
   datastore().make<std::string>("ControlMode", "Position");
   datastore().make<std::string>("TorqueMode", "Custom");
+  game.setJRLTorque(true);
   datastore().make_call("getPostureTask", [this]() -> mc_tasks::PostureTaskPtr { return compPostureTask; });
 
   // GUI
@@ -178,6 +179,11 @@ void MonodzukuriKinovaDemo::joypadManager(void)
     activateFlag = !activateFlag;
   }
 
+  if (buttonFunc(Y) && buttonFunc(Y) != triangleButtonLastState_) // Triangle Button
+  {
+    compliantFlag = !compliantFlag;
+  }
+
   if (buttonFunc(RB) && buttonFunc(RB) != r1ButtonLastState_) // R1 Button
   {
     datastore().assign<std::string>("TorqueMode", "Custom");
@@ -235,6 +241,7 @@ void MonodzukuriKinovaDemo::joypadManager(void)
   rightPadLastState_ = rightPadState;
   leftPadLastState_ = leftPadState;
   xButtonLastState_ = buttonFunc(A);
+  triangleButtonLastState_= buttonFunc(Y);
   // mc_rtc::log::info("TorqueMode {}; NullSpaceMode {}; CompliSinusMode {}; ComplianceMode {}; MinJerkMode {}", 
   //                   joypadTorqueModeFlag, joypadNullSpaceModeFlag, joypadCompliSinusModeFlag, joypadComplianceModeFlag, joypadMinJerkModeFlag);
 }

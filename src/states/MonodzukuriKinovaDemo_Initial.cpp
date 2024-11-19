@@ -27,6 +27,7 @@ void MonodzukuriKinovaDemo_Initial::start(mc_control::fsm::Controller & ctl_)
   ctl.solver().removeTask(ctl.compEETask);
 
   ctl.datastore().assign<std::string>("ControlMode", "Position");
+  ctl.game.setControlMode(5);
 
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Initial state - Position controlled");
 }
