@@ -29,6 +29,7 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
   ctl.compliantFlag = true;
+  ctl.posTorqueFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(6);
 
@@ -110,9 +111,13 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  // If press the Circle button, activate/deactivate the dual compliance
+  // If press the Circle button, change between position and torque control
   if (ctl.posTorqueFlag && !isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] Torque controlled");
+     // Enable feedback from external forces estimator (safer)
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
+    }
     isTorqueControl_ = true;
     ctl.compEETask->positionTask->stiffness(100);
     ctl.compEETask->orientationTask->stiffness(100);
@@ -125,7 +130,7 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     mc_rtc::log::info("[Sinus Compliance mode] Position controlled");
     isTorqueControl_ = false;
     changeModeRequest_ = true;
-    ctl.compEETask.reset();
+    ctl.compEETask->refAccel(Eigen::Vector6d ::Zero());
     ctl.compPostureTask->setGains(10.0, 20.0);
   }
 
@@ -145,11 +150,16 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
 
 void MonodzukuriKinovaDemo_SinCompliance::setPositionControl(mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+   // Disable feedback from external forces estimator (safer)
+  if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+    ctl.datastore().call("EF_Estimator::toggleActive");
+  }
   ctl.compEETask->positionTask->stiffness(10);
   ctl.compEETask->orientationTask->stiffness(10);
   ctl.compEETask->makeCompliant(false);
   ctl.compPostureTask->makeCompliant(false);
   ctl.compPostureTask->stiffness(0.5);
+  ctl.datastore().assign<std::string>("ControlMode", "Position");
 }
 
 EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_SinCompliance",

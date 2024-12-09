@@ -35,7 +35,7 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   ctl.activateFlag = false;
   ctl.nsCompliantFlag = true;
   ctl.compliantFlag = false;
-  ctl.posTorqueFlag = false; // false: torque control, true: position control
+  ctl.posTorqueFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(4);
 
@@ -178,6 +178,8 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
   if (currentForce_ > dualComplianceThreshold_) {
     if (!admittanceFlag_) {
       mc_rtc::log::info("Above threshold, admittance control activated");
+
+      // IMPORTANT: disable feedback from external forces estimator, not compatible with admittance control
       if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
         ctl.datastore().call("EF_Estimator::toggleActive");
       }
@@ -208,7 +210,6 @@ void MonodzukuriKinovaDemo_NSCompliant::admittanceControl(
   ctl.compPostureTask->damping(5.0);
   ctl.compPostureTask->weight(1);
   ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
-
   admittance_task->reset();
   admittance_task->admittance(sva::ForceVecd(Eigen::Vector6d::Zero()));
   admittance_task->weight(10000);
