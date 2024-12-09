@@ -26,7 +26,7 @@
 #define MJ_MODE 3
 #define NS_MODE 4
 #define INTRO 5
-#define MCNS_MODE 6
+#define MTC_MODE 6
 
 typedef std::pair<float, float> position;
 
@@ -64,6 +64,7 @@ public:
   void setJRLTorque(bool jrl_torque);
 
   void addToLogger(mc_rtc::Logger &logger);
+  void changeLanguage(void);
 
 private:
   // Window related
@@ -73,21 +74,41 @@ private:
   GLuint circleVAO;
   GLuint circleVBO;
 
-  GLuint introID; // Background intro
+  // English textures
 
-  GLuint mc_jrlID; // Background Moving Compliance, JRL torque
-  GLuint dc_jrlID; // Background Dual Compliance, JRL torque
-  GLuint fc_jrlID; // Background Full Compliance, JRL torque
-  GLuint mj_jrlID; // Background MinJerk, JRL torque
-  GLuint ns_jrlID; // Background Null Space, JRL torque
-  GLuint mcns_jrlID; // Background Moving Null Space, JRL torque
+  GLuint introID_en; // Background intro
 
-  GLuint mc_defaultID; // Background Moving Compliance, Default torque
-  GLuint dc_defaultID; // Background Dual Compliance, Default torque
-  GLuint fc_defaultID; // Background Full Compliance, Default torque
-  GLuint mj_defaultID; // Background MinJerk, Default torque
-  GLuint ns_defaultID; // Background Null Space, Default torque
-  GLuint mcns_defaultID; // Background Moving Null Space, Default torque
+  GLuint mc_jrlID_en; // Background Moving Compliance, JRL torque
+  GLuint dc_jrlID_en; // Background Dual Compliance, JRL torque
+  GLuint fc_jrlID_en; // Background Full Compliance, JRL torque
+  GLuint mj_jrlID_en; // Background MinJerk, JRL torque
+  GLuint ns_jrlID_en; // Background Null Space, JRL torque
+  GLuint mtc_jrlID_en; // Background Moving Null Space, JRL torque
+
+  GLuint mc_defaultID_en; // Background Moving Compliance, Default torque
+  GLuint dc_defaultID_en; // Background Dual Compliance, Default torque
+  GLuint fc_defaultID_en; // Background Full Compliance, Default torque
+  GLuint mj_defaultID_en; // Background MinJerk, Default torque
+  GLuint ns_defaultID_en; // Background Null Space, Default torque
+  GLuint mtc_defaultID_en; // Background Moving Null Space, Default torque
+
+  // Japanese textures
+
+  GLuint introID_jp; // Background intro
+
+  GLuint mc_jrlID_jp; // Background Moving Compliance, JRL torque
+  GLuint dc_jrlID_jp; // Background Dual Compliance, JRL torque
+  GLuint fc_jrlID_jp; // Background Full Compliance, JRL torque
+  GLuint mj_jrlID_jp; // Background MinJerk, JRL torque
+  GLuint ns_jrlID_jp; // Background Null Space, JRL torque
+  GLuint mtc_jrlID_jp; // Background Moving Null Space, JRL torque
+
+  GLuint mc_defaultID_jp; // Background Moving Compliance, Default torque
+  GLuint dc_defaultID_jp; // Background Dual Compliance, Default torque
+  GLuint fc_defaultID_jp; // Background Full Compliance, Default torque
+  GLuint mj_defaultID_jp; // Background MinJerk, Default torque
+  GLuint ns_defaultID_jp; // Background Null Space, Default torque
+  GLuint mtc_defaultID_jp; // Background Moving Null Space, Default torque
 
   void manageBackground(void);
 
@@ -97,7 +118,8 @@ private:
   GLuint loadTexture(const char *filename);
   void renderTexture(GLuint texture, float x, float y, float scale);
 
-  std::string getPath(const std::string &filename);
+  std::string getPath(const std::string &filename, bool english);
+  bool uiInEnglish_ = true;
 
   int control_mode = INTRO;
   bool jrl_torque = true;

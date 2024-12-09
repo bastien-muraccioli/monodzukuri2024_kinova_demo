@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mc_control/fsm/State.h>
+#include <mc_tvm/Robot.h>
 
 struct MonodzukuriKinovaDemo_SinCompliance : mc_control::fsm::State
 {
@@ -32,4 +33,7 @@ private:
   double posTorqueTransitionDuration_= 1.0;
   bool posTorqueTransitionStarted_= false;
 
+  void setPositionControl(mc_control::fsm::Controller & ctl);
+  void setTorqueControl(mc_control::fsm::Controller & ctl);
+  bool changeModeRequest_ = false;
 };

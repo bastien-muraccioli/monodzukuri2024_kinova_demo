@@ -2,6 +2,7 @@
 
 #include <mc_control/fsm/State.h>
 #include <mc_tasks/AdmittanceTask.h>
+#include <mc_tvm/Robot.h>
 
 struct MonodzukuriKinovaDemo_NSCompliant : mc_control::fsm::State {
 
@@ -20,10 +21,14 @@ private:
   void admittanceControl(mc_control::fsm::Controller &ctl);
   void dualComplianceLoop(mc_control::fsm::Controller &ctl);
   void nullSpaceControl(mc_control::fsm::Controller &ctl);
+  void setPositionControl(mc_control::fsm::Controller &ctl);
+  bool changeModeRequest_ = false;
 
   bool dualComplianceFlag_ = false;
+  bool nsCompliantFlag_ = true;
+  bool eeCompliantFlag_ = false;
   bool admittanceFlag_ = false;
-  double dualComplianceThreshold_ = 8.0;
+  double dualComplianceThreshold_ = 3.0;
   double currentForce_ = 0.0;
 
   bool isPositionControl_ = false;

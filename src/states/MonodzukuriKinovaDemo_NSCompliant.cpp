@@ -33,6 +33,9 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
   ctl.activateFlag = false;
+  ctl.nsCompliantFlag = true;
+  ctl.compliantFlag = false;
+  ctl.posTorqueFlag = false; // false: torque control, true: position control
 
   ctl.game.setControlMode(4);
 
@@ -69,12 +72,19 @@ bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller &ctl_) {
     nullSpaceControl(ctl);
   }
 
-  // While the state is running
-  if (start_moving_ && !transitionStarted_) {
-    controlModeManager(ctl);
-    if (dualComplianceFlag_) {
-      dualComplianceLoop(ctl);
+   // Change mode from torque to position
+  if (start_moving_ && changeModeRequest_)
+  {
+    if(ctl.robot().tvmRobot().alpha()->value().norm() < 0.01)
+    {
+      changeModeRequest_ = false;
+      setPositionControl(ctl);
     }
+  }
+
+  // While the state is running
+  if (start_moving_ && !transitionStarted_ && !changeModeRequest_) {
+    controlModeManager(ctl);
   }
 
   return false;
@@ -90,42 +100,69 @@ void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  // If press the X button, activate/deactivate the dual compliance
-  if (ctl.activateFlag && !dualComplianceFlag_) {
-    mc_rtc::log::info("[Null Space mode] Dual Compliance activated");
-    dualComplianceFlag_ = true;
-    ctl.game.setControlMode(1);
-  } else if (dualComplianceFlag_ && !ctl.activateFlag) {
-    mc_rtc::log::info("[Null Space mode] Dual Compliance deactivated");
-    dualComplianceFlag_ = false;
-    ctl.game.setControlMode(4);
-    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-        ctl.datastore().call("EF_Estimator::toggleActive");
-      }
-    nullSpaceControl(ctl);
+  if(ctl.posTorqueFlag && !isPositionControl_)
+  {
+    mc_rtc::log::info("[Null Space mode] Position control");
+    isPositionControl_ = true;
+    changeModeRequest_ = true;
+    ctl.compPostureTask->setGains(10.0, 20.0);
+  }
+  else if(!ctl.posTorqueFlag && isPositionControl_)
+  {
+    mc_rtc::log::info("[Null Space mode] Torque control");
+    isPositionControl_ = false;
+    if(dualComplianceFlag_)
+    {
+      dualComplianceLoop(ctl);
+    } else{
+      nullSpaceControl(ctl);
+    }
+    ctl.datastore().assign<std::string>("ControlMode", "Torque");
   }
 
-  // If press the R2 trigger, activate torque control, if not, activate position
-  // control
-  // if (ctl.joypadTriggerControlFlag != isTorqueControl_) {
-  //   isTorqueControl_ = !isTorqueControl_;
-  //   if (isTorqueControl_ and !dualComplianceFlag_) {
-  //     if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-  //       ctl.datastore().call("EF_Estimator::toggleActive");
-  //     }
-  //     nullSpaceControl(ctl);
+  if(!isPositionControl_)
+  {
+    // If press the X button, activate/deactivate the dual compliance
+    if (ctl.activateFlag && !dualComplianceFlag_) {
+      mc_rtc::log::info("[Null Space mode] Dual Compliance activated");
+      dualComplianceFlag_ = true;
+      ctl.game.setControlMode(1);
+    } else if (dualComplianceFlag_ && !ctl.activateFlag) {
+      mc_rtc::log::info("[Null Space mode] Dual Compliance deactivated");
+      dualComplianceFlag_ = false;
+      ctl.game.setControlMode(4);
+      nullSpaceControl(ctl);
+    }
+    if (dualComplianceFlag_) {
+        dualComplianceLoop(ctl);
+      }
 
-      // ctl.datastore().assign<std::string>("ControlMode", "Torque");
-    // } else if (!isTorqueControl_ and !dualComplianceFlag_) {
-    //   // Position control
-    //   ctl.solver().removeTask(admittance_task);
-    //   ctl.solver().removeTask(ctl.compEETask);
-    //   ctl.compPostureTask->reset();
-    //   ctl.compPostureTask->stiffness(0.5);
-    //   ctl.compPostureTask->makeCompliant(false);
+    if(ctl.nsCompliantFlag && !nsCompliantFlag_)
+    {
+      mc_rtc::log::info("[Null Space mode] Nullspace compliance activated");
+      nsCompliantFlag_ = true;
+      ctl.compPostureTask->makeCompliant(true);
+    }
+    else if(nsCompliantFlag_ && !ctl.nsCompliantFlag)
+    {
+      mc_rtc::log::info("[Null Space mode] Nullspace compliance deactivated");
+      nsCompliantFlag_ = false;
+      ctl.compPostureTask->makeCompliant(false);
+    }
 
-    //   ctl.datastore().assign<std::string>("ControlMode", "Position");
-    
+    if(ctl.compliantFlag && !eeCompliantFlag_)
+    {
+      mc_rtc::log::info("[Null Space mode] End-effector compliance activated");
+      eeCompliantFlag_ = true;
+      ctl.compEETask->makeCompliant(true);
+    }
+    else if(eeCompliantFlag_ && !ctl.compliantFlag)
+    {
+      mc_rtc::log::info("[Null Space mode] End-effector compliance deactivated");
+      eeCompliantFlag_ = false;
+      ctl.compEETask->makeCompliant(false);
+    }
+  }
 }
 
 void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
@@ -133,9 +170,10 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
   // Activate the admittance control if the force is below the threshold
-  currentForce_ = ctl.robot().forceSensor("EEForceSensor").force().norm();
+  // currentForce_ = ctl.robot().forceSensor("EEForceSensor").force().norm();
+  currentForce_ = ctl.robot().forceSensor("EEForceSensor").wrench().vector().norm();
   // currentForce_ = ctl.robot().forceSensor("EEForceSensor").FT_sensor_wrench().norm();
-  // mc_rtc::log::info("[Null Space mode] Current force: {}", currentForce_);
+  mc_rtc::log::info("[Null Space mode] Current force: {}", currentForce_);
 
   if (currentForce_ > dualComplianceThreshold_) {
     if (!admittanceFlag_) {
@@ -169,7 +207,7 @@ void MonodzukuriKinovaDemo_NSCompliant::admittanceControl(
   ctl.compPostureTask->stiffness(0.0);
   ctl.compPostureTask->damping(5.0);
   ctl.compPostureTask->weight(1);
-  ctl.compPostureTask->makeCompliant(true);
+  ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
 
   admittance_task->reset();
   admittance_task->admittance(sva::ForceVecd(Eigen::Vector6d::Zero()));
@@ -188,7 +226,7 @@ void MonodzukuriKinovaDemo_NSCompliant::nullSpaceControl(
   ctl.compPostureTask->stiffness(0.0);
   ctl.compPostureTask->damping(5.0);
   ctl.compPostureTask->weight(1);
-  ctl.compPostureTask->makeCompliant(true);
+  ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
 
   ctl.compEETask->reset();
   ctl.compEETask->positionTask->reset();
@@ -197,8 +235,18 @@ void MonodzukuriKinovaDemo_NSCompliant::nullSpaceControl(
   ctl.compEETask->orientationTask->reset();
   ctl.compEETask->orientationTask->stiffness(200);
   ctl.compEETask->orientationTask->weight(10000);
-  ctl.compEETask->makeCompliant(false);
+  ctl.compEETask->makeCompliant(eeCompliantFlag_);
   ctl.solver().addTask(ctl.compEETask);
+}
+
+void MonodzukuriKinovaDemo_NSCompliant::setPositionControl(mc_control::fsm::Controller &ctl_) {
+  auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+  ctl.solver().removeTask(admittance_task);
+  ctl.solver().removeTask(ctl.compEETask);
+  ctl.compPostureTask->reset();
+  ctl.compPostureTask->stiffness(0.5);
+  ctl.compPostureTask->makeCompliant(false);
+  ctl.datastore().assign<std::string>("ControlMode", "Position");
 }
 
 EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_NSCompliant",

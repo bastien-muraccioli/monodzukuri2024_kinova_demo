@@ -69,8 +69,18 @@ bool MonodzukuriKinovaDemo_Compliance::run(mc_control::fsm::Controller & ctl_)
       return true;
     }
   }
+
+  // Change mode from torque to position
+  if(changeModeRequest_)
+  {
+    if(ctl.robot().tvmRobot().alpha()->value().norm() < 0.01)
+    {
+      changeModeRequest_ = false;
+      setPositionControl(ctl);
+    }
+  }
   
-  if(!transitionStarted_)
+  if(!transitionStarted_ && !changeModeRequest_)
   {
     controlModeManager(ctl);
   }
@@ -86,38 +96,54 @@ void MonodzukuriKinovaDemo_Compliance::controlModeManager(mc_control::fsm::Contr
 {
   auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  if(ctl.joypadTriggerControlFlag != isTorqueControl_)
+  if(ctl.posTorqueFlag != isTorqueControl_)
   {
     isTorqueControl_ = !isTorqueControl_;
     if(isTorqueControl_)
     {
-      ctl.compPostureTask->stiffness(0.0);
-      ctl.compPostureTask->damping(4.0);
-      ctl.compPostureTask->weight(1);
-
-      ctl.compEETask->reset();
-      ctl.compEETask->positionTask->weight(10000);
-      ctl.compEETask->positionTask->stiffness(10);
-      ctl.compEETask->positionTask->position(ctl.taskPosition_);
-      ctl.compEETask->orientationTask->weight(10000);
-      ctl.compEETask->orientationTask->stiffness(30);
-      ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
-      ctl.compEETask->makeCompliant(true);
-      ctl.solver().addTask(ctl.compEETask);
-
-      ctl.compPostureTask->makeCompliant(true);
-
-      ctl.datastore().assign<std::string>("ControlMode", "Torque");
+      mc_rtc::log::info("[Compliance mode] Transition to torque control");
+      setTorqueControl(ctl);
     }
     else
     {
-      ctl.compPostureTask->reset();
-      ctl.compPostureTask->stiffness(0.5);
-      ctl.compPostureTask->makeCompliant(false);
-      ctl.solver().removeTask(ctl.compEETask);
-      ctl.datastore().assign<std::string>("ControlMode", "Position");
+      // Transition to position control
+      mc_rtc::log::info("[Compliance mode] Transition to position control");
+      changeModeRequest_ = true;
+      ctl.compPostureTask->setGains(10.0, 20.0);
     }
   }
+}
+
+void MonodzukuriKinovaDemo_Compliance::setTorqueControl(mc_control::fsm::Controller & ctl_)
+{
+  auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+  ctl.compPostureTask->stiffness(0.0);
+  ctl.compPostureTask->damping(4.0);
+  ctl.compPostureTask->weight(1);
+
+  ctl.compEETask->reset();
+  ctl.compEETask->positionTask->weight(10000);
+  ctl.compEETask->positionTask->stiffness(10);
+  ctl.compEETask->positionTask->position(ctl.taskPosition_);
+  ctl.compEETask->orientationTask->weight(10000);
+  ctl.compEETask->orientationTask->stiffness(30);
+  ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
+  ctl.compEETask->makeCompliant(true);
+  ctl.solver().addTask(ctl.compEETask);
+
+  ctl.compPostureTask->makeCompliant(true);
+
+  ctl.datastore().assign<std::string>("ControlMode", "Torque");
+}
+
+void MonodzukuriKinovaDemo_Compliance::setPositionControl(mc_control::fsm::Controller & ctl_)
+{
+  auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+  ctl.compPostureTask->reset();
+  ctl.compPostureTask->stiffness(0.5);
+  ctl.compPostureTask->makeCompliant(false);
+  ctl.solver().removeTask(ctl.compEETask);
+  ctl.datastore().assign<std::string>("ControlMode", "Position");
 }
 
 EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_Compliance", MonodzukuriKinovaDemo_Compliance)

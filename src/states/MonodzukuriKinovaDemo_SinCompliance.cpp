@@ -8,7 +8,7 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  // Disable feedback from external forces estimator (safer)
+  // Enable feedback from external forces estimator (safer)
   if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
     ctl.datastore().call("EF_Estimator::toggleActive");
   }
@@ -30,7 +30,7 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
   ctl.changeModeRequest = false;
   ctl.compliantFlag = true;
 
-  ctl.game.setControlMode(0);
+  ctl.game.setControlMode(6);
 
   mc_rtc::log::success(
       "[MonodzukuriKinovaDemo] Sinus Compliance mode initialized");
@@ -71,8 +71,16 @@ bool MonodzukuriKinovaDemo_SinCompliance::run(
     ctl.datastore().assign<std::string>("ControlMode", "Position");
   }
 
+  if(start_moving_ && changeModeRequest_) {
+    if(ctl.robot().tvmRobot().alpha()->value().norm() < 0.01)
+    {
+      changeModeRequest_ = false;
+      setPositionControl(ctl);
+    }
+  }
+
   // Start to do sinus movement
-  if (start_moving_ && !transitionStarted_) {
+  if (start_moving_ && !transitionStarted_ && !changeModeRequest_) {
     controlModeManager(ctl);
     ctlTime_ += ctl.dt_ctrl;
     ctl.compEETask->positionTask->position(
@@ -102,8 +110,8 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  // If press the X button, activate/deactivate the dual compliance
-  if (ctl.activateFlag && !isTorqueControl_) {
+  // If press the Circle button, activate/deactivate the dual compliance
+  if (ctl.posTorqueFlag && !isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] Torque controlled");
     isTorqueControl_ = true;
     ctl.compEETask->positionTask->stiffness(100);
@@ -113,28 +121,35 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     ctl.compPostureTask->damping(5.0);
     ctl.compPostureTask->makeCompliant(true);
     ctl.datastore().assign<std::string>("ControlMode", "Torque");
-  } else if (isTorqueControl_ && !ctl.activateFlag) {
+  } else if (isTorqueControl_ && !ctl.posTorqueFlag) {
     mc_rtc::log::info("[Sinus Compliance mode] Position controlled");
     isTorqueControl_ = false;
-    ctl.compEETask->positionTask->stiffness(10);
-    ctl.compEETask->orientationTask->stiffness(10);
-    ctl.compEETask->makeCompliant(false);
-    ctl.compPostureTask->makeCompliant(false);
-    ctl.compPostureTask->stiffness(0.5);
-    ctl.datastore().assign<std::string>("ControlMode", "Position");
+    changeModeRequest_ = true;
+    ctl.compEETask.reset();
+    ctl.compPostureTask->setGains(10.0, 20.0);
   }
 
   if (ctl.compliantFlag && !isCompliantControl_ && isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] EEF Compliant");
     isCompliantControl_ = true;
     ctl.compEETask->makeCompliant(true);
-    ctl.game.setControlMode(0);
+    ctl.game.setControlMode(6);
+    
   } else if (!ctl.compliantFlag && isCompliantControl_ && isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] EEF no Compliant");
     isCompliantControl_ = false;
     ctl.compEETask->makeCompliant(false);
-    ctl.game.setControlMode(6);
+    ctl.game.setControlMode(0);
   }
+}
+
+void MonodzukuriKinovaDemo_SinCompliance::setPositionControl(mc_control::fsm::Controller &ctl_) {
+  auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+  ctl.compEETask->positionTask->stiffness(10);
+  ctl.compEETask->orientationTask->stiffness(10);
+  ctl.compEETask->makeCompliant(false);
+  ctl.compPostureTask->makeCompliant(false);
+  ctl.compPostureTask->stiffness(0.5);
 }
 
 EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_SinCompliance",

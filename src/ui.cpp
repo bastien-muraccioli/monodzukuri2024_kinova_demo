@@ -197,95 +197,189 @@ void FittsGame::run() {
 }
 
 void FittsGame::manageBackground(void) {
-  switch (control_mode) {
-  case MC_MODE:
-    if (jrl_torque) {
-      renderTexture(mc_jrlID, win_size.first / 2, win_size.second / 2, 1080.0f);
-    } else {
-      renderTexture(mc_defaultID, win_size.first / 2, win_size.second / 2,
-                    1080.0f);
+
+  if(uiInEnglish_)
+  {
+    switch (control_mode) {
+    case MC_MODE:
+      if (jrl_torque) {
+        renderTexture(mc_jrlID_en, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(mc_defaultID_en, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case DC_MODE:
+      if (jrl_torque) {
+        renderTexture(dc_jrlID_en, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(dc_defaultID_en, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case FC_MODE:
+      if (jrl_torque) {
+        renderTexture(fc_jrlID_en, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(fc_defaultID_en, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case MJ_MODE:
+      if (jrl_torque) {
+        renderTexture(mj_jrlID_en, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(mj_defaultID_en, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case NS_MODE:
+      if (jrl_torque) {
+        renderTexture(ns_jrlID_en, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(ns_defaultID_en, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case MTC_MODE:
+      if (jrl_torque) {
+        renderTexture(mtc_jrlID_en, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(mtc_defaultID_en, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case INTRO:
+      renderTexture(introID_en, win_size.first / 2, win_size.second / 2, 1080.0f);
+      break;
+    default:
+      renderTexture(introID_en, win_size.first / 2, win_size.second / 2, 1080.0f);
+      break;
     }
-    break;
-  case DC_MODE:
-    if (jrl_torque) {
-      renderTexture(dc_jrlID, win_size.first / 2, win_size.second / 2, 1080.0f);
-    } else {
-      renderTexture(dc_defaultID, win_size.first / 2, win_size.second / 2,
-                    1080.0f);
-    }
-    break;
-  case FC_MODE:
-    if (jrl_torque) {
-      renderTexture(fc_jrlID, win_size.first / 2, win_size.second / 2, 1080.0f);
-    } else {
-      renderTexture(fc_defaultID, win_size.first / 2, win_size.second / 2,
-                    1080.0f);
-    }
-    break;
-  case MJ_MODE:
-    if (jrl_torque) {
-      renderTexture(mj_jrlID, win_size.first / 2, win_size.second / 2, 1080.0f);
-    } else {
-      renderTexture(mj_defaultID, win_size.first / 2, win_size.second / 2,
-                    1080.0f);
-    }
-    break;
-  case NS_MODE:
-    if (jrl_torque) {
-      renderTexture(ns_jrlID, win_size.first / 2, win_size.second / 2, 1080.0f);
-    } else {
-      renderTexture(ns_defaultID, win_size.first / 2, win_size.second / 2,
-                    1080.0f);
-    }
-    break;
-  case MCNS_MODE:
-    if (jrl_torque) {
-      renderTexture(mcns_jrlID, win_size.first / 2, win_size.second / 2, 1080.0f);
-    } else {
-      renderTexture(mcns_defaultID, win_size.first / 2, win_size.second / 2,
-                    1080.0f);
-    }
-    break;
-  case INTRO:
-    renderTexture(introID, win_size.first / 2, win_size.second / 2, 1080.0f);
-    break;
-  default:
-    renderTexture(introID, win_size.first / 2, win_size.second / 2, 1080.0f);
-    break;
   }
+  else{
+        switch (control_mode) {
+    case MC_MODE:
+      if (jrl_torque) {
+        renderTexture(mc_jrlID_jp, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(mc_defaultID_jp, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case DC_MODE:
+      if (jrl_torque) {
+        renderTexture(dc_jrlID_jp, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(dc_defaultID_jp, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case FC_MODE:
+      if (jrl_torque) {
+        renderTexture(fc_jrlID_jp, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(fc_defaultID_jp, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case MJ_MODE:
+      if (jrl_torque) {
+        renderTexture(mj_jrlID_jp, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(mj_defaultID_jp, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case NS_MODE:
+      if (jrl_torque) {
+        renderTexture(ns_jrlID_jp, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(ns_defaultID_jp, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case MTC_MODE:
+      if (jrl_torque) {
+        renderTexture(mtc_jrlID_jp, win_size.first / 2, win_size.second / 2, 1080.0f);
+      } else {
+        renderTexture(mtc_defaultID_jp, win_size.first / 2, win_size.second / 2,
+                      1080.0f);
+      }
+      break;
+    case INTRO:
+      renderTexture(introID_jp, win_size.first / 2, win_size.second / 2, 1080.0f);
+      break;
+    default:
+      renderTexture(introID_jp, win_size.first / 2, win_size.second / 2, 1080.0f);
+      break;
+    }
+  }
+  
 }
 
 void FittsGame::loadingTextures(void) {
   // mc_rtc::log::info("Loading texture from {}", );
-  introID = loadTexture(getPath("intro.png").c_str());
-  mc_jrlID = loadTexture(getPath("mc-jrl.png").c_str());
-  dc_jrlID = loadTexture(getPath("dc-jrl.png").c_str());
-  fc_jrlID = loadTexture(getPath("fc-jrl.png").c_str());
-  mj_jrlID = loadTexture(getPath("mj-jrl.png").c_str());
-  ns_jrlID = loadTexture(getPath("ns-jrl.png").c_str());
-  mcns_jrlID = loadTexture(getPath("mcns-jrl.png").c_str());
-  mc_defaultID = loadTexture(getPath("mc-default.png").c_str());
-  dc_defaultID = loadTexture(getPath("dc-default.png").c_str());
-  fc_defaultID = loadTexture(getPath("fc-default.png").c_str());
-  mj_defaultID = loadTexture(getPath("mj-default.png").c_str());
-  ns_defaultID = loadTexture(getPath("ns-default.png").c_str());
-  mcns_defaultID = loadTexture(getPath("mcns-default.png").c_str());
+  introID_en = loadTexture(getPath("intro.png", true).c_str());
+  mc_jrlID_en = loadTexture(getPath("mc-jrl.png", true).c_str());
+  dc_jrlID_en = loadTexture(getPath("dc-jrl.png", true).c_str());
+  fc_jrlID_en = loadTexture(getPath("fc-jrl.png", true).c_str());
+  mj_jrlID_en = loadTexture(getPath("mj-jrl.png", true).c_str());
+  ns_jrlID_en = loadTexture(getPath("ns-jrl.png", true).c_str());
+  mtc_jrlID_en = loadTexture(getPath("mtc-jrl.png", true).c_str());
+  mc_defaultID_en = loadTexture(getPath("mc-default.png", true).c_str());
+  dc_defaultID_en = loadTexture(getPath("dc-default.png", true).c_str());
+  fc_defaultID_en = loadTexture(getPath("fc-default.png", true).c_str());
+  mj_defaultID_en = loadTexture(getPath("mj-default.png", true).c_str());
+  ns_defaultID_en = loadTexture(getPath("ns-default.png", true).c_str());
+  mtc_defaultID_en = loadTexture(getPath("mtc-default.png", true).c_str());
+
+  // Japanese textures
+  introID_jp = loadTexture(getPath("intro.png", false).c_str());
+  mc_jrlID_jp = loadTexture(getPath("mc-jrl.png", false).c_str());
+  dc_jrlID_jp = loadTexture(getPath("dc-jrl.png", false).c_str());
+  fc_jrlID_jp = loadTexture(getPath("fc-jrl.png", false).c_str());
+  mj_jrlID_jp = loadTexture(getPath("mj-jrl.png", false).c_str());
+  ns_jrlID_jp = loadTexture(getPath("ns-jrl.png", false).c_str());
+  mtc_jrlID_jp = loadTexture(getPath("mtc-jrl.png", false).c_str());
+  mc_defaultID_jp = loadTexture(getPath("mc-default.png", false).c_str());
+  dc_defaultID_jp = loadTexture(getPath("dc-default.png", false).c_str());
+  fc_defaultID_jp = loadTexture(getPath("fc-default.png", false).c_str());
+  mj_defaultID_jp = loadTexture(getPath("mj-default.png", false).c_str());
+  ns_defaultID_jp = loadTexture(getPath("ns-default.png", false).c_str());
+  mtc_defaultID_jp = loadTexture(getPath("mtc-default.png", false).c_str());
+
 }
 
 void FittsGame::deleteTextures(void) {
-  glDeleteTextures(1, &introID);
-  glDeleteTextures(1, &mc_jrlID);
-  glDeleteTextures(1, &dc_jrlID);
-  glDeleteTextures(1, &fc_jrlID);
-  glDeleteTextures(1, &mj_jrlID);
-  glDeleteTextures(1, &ns_jrlID);
-  glDeleteTextures(1, &mcns_jrlID);
-  glDeleteTextures(1, &mc_defaultID);
-  glDeleteTextures(1, &dc_defaultID);
-  glDeleteTextures(1, &fc_defaultID);
-  glDeleteTextures(1, &mj_defaultID);
-  glDeleteTextures(1, &ns_defaultID);
-  glDeleteTextures(1, &mcns_defaultID);
+  glDeleteTextures(1, &introID_en);
+  glDeleteTextures(1, &mc_jrlID_en);
+  glDeleteTextures(1, &dc_jrlID_en);
+  glDeleteTextures(1, &fc_jrlID_en);
+  glDeleteTextures(1, &mj_jrlID_en);
+  glDeleteTextures(1, &ns_jrlID_en);
+  glDeleteTextures(1, &mtc_jrlID_en);
+  glDeleteTextures(1, &mc_defaultID_en);
+  glDeleteTextures(1, &dc_defaultID_en);
+  glDeleteTextures(1, &fc_defaultID_en);
+  glDeleteTextures(1, &mj_defaultID_en);
+  glDeleteTextures(1, &ns_defaultID_en);
+  glDeleteTextures(1, &mtc_defaultID_en);
+
+  glDeleteTextures(1, &introID_jp);
+  glDeleteTextures(1, &mc_jrlID_jp);
+  glDeleteTextures(1, &dc_jrlID_jp);
+  glDeleteTextures(1, &fc_jrlID_jp);
+  glDeleteTextures(1, &mj_jrlID_jp);
+  glDeleteTextures(1, &ns_jrlID_jp);
+  glDeleteTextures(1, &mtc_jrlID_jp);
+  glDeleteTextures(1, &mc_defaultID_jp);
+  glDeleteTextures(1, &dc_defaultID_jp);
+  glDeleteTextures(1, &fc_defaultID_jp);
+  glDeleteTextures(1, &mj_defaultID_jp);
+  glDeleteTextures(1, &ns_defaultID_jp);
+  glDeleteTextures(1, &mtc_defaultID_jp);
+
 }
 
 void FittsGame::setControlMode(int mode) { control_mode = mode; }
@@ -423,14 +517,22 @@ void FittsGame::renderTargetIdx(float x, float y, int idx) {
   renderText(x, y, ss.str(), GLUT_BITMAP_HELVETICA_18);
 }
 
-std::string FittsGame::getPath(const std::string &filename) {
+std::string FittsGame::getPath(const std::string &filename, bool english) {
   // Get the directory of the current source file
   std::filesystem::path source_file = __FILE__;
   std::filesystem::path source_dir =
       source_file.parent_path(); // Get the source directory
 
+  std::filesystem::path font_path;
+
   // Construct the font path relative to the source directory
-  std::filesystem::path font_path = source_dir / "assets" / filename;
+  if (english) {
+    font_path = source_dir / "assets-en" / filename;
+  }
+  else {
+    font_path = source_dir / "assets-jp" / filename;
+  }
+
   return font_path.string();
 }
 
@@ -509,4 +611,9 @@ void FittsGame::renderTexture(GLuint texture, float x, float y, float scale) {
   glPopMatrix();
   glBindTexture(GL_TEXTURE_2D, 0);
   glDisable(GL_TEXTURE_2D);
+}
+
+void FittsGame::changeLanguage(void) 
+{ 
+  uiInEnglish_ = !uiInEnglish_;
 }

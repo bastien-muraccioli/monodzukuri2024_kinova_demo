@@ -52,6 +52,8 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
   datastore().make<std::string>("TorqueMode", "Custom");
   game.setJRLTorque(true);
   datastore().make_call("getPostureTask", [this]() -> mc_tasks::PostureTaskPtr { return compPostureTask; });
+  gui()->addElement({"UI"}, mc_rtc::gui::Checkbox("English (Checked) or Japanese (Unchecked)", 
+                    [this]() { return uiInEnglish_; }, [this]() { uiInEnglish_ = !uiInEnglish_; }));
 
   // GUI
   gui()->addElement({"Controller"}, mc_rtc::gui::Checkbox("Close Loop Velocity Damper", 
@@ -73,6 +75,12 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double
 
 bool MonodzukuriKinovaDemo::run()
 {
+
+  if(languageFlag_ != uiInEnglish_)
+  {
+    game.changeLanguage();
+    languageFlag_ = uiInEnglish_;
+  }
   
   // Update the velocity damper constraints
   if (velocityDamperFlag_ && !closeLoopVelocityDamper_)
@@ -179,9 +187,19 @@ void MonodzukuriKinovaDemo::joypadManager(void)
     activateFlag = !activateFlag;
   }
 
-  if (buttonFunc(Y) && buttonFunc(Y) != triangleButtonLastState_) // Triangle Button
+  if (buttonFunc(Y) && buttonFunc(Y) != squareButtonLastState_) // Square Button
   {
     compliantFlag = !compliantFlag;
+  }
+
+  if (buttonFunc(X) && buttonFunc(X) != triangleButtonLastState_) // Triangle Button
+  {
+    nsCompliantFlag = !nsCompliantFlag;
+  }
+
+  if (buttonFunc(B) && buttonFunc(B) != circleButtonLastState_) // Circle Button
+  {
+    posTorqueFlag = !posTorqueFlag;
   }
 
   if (buttonFunc(RB) && buttonFunc(RB) != r1ButtonLastState_) // R1 Button
@@ -241,7 +259,9 @@ void MonodzukuriKinovaDemo::joypadManager(void)
   rightPadLastState_ = rightPadState;
   leftPadLastState_ = leftPadState;
   xButtonLastState_ = buttonFunc(A);
-  triangleButtonLastState_= buttonFunc(Y);
+  squareButtonLastState_= buttonFunc(Y);
+  triangleButtonLastState_ = buttonFunc(X);
+  circleButtonLastState_ = buttonFunc(B);
   // mc_rtc::log::info("TorqueMode {}; NullSpaceMode {}; CompliSinusMode {}; ComplianceMode {}; MinJerkMode {}", 
   //                   joypadTorqueModeFlag, joypadNullSpaceModeFlag, joypadCompliSinusModeFlag, joypadComplianceModeFlag, joypadMinJerkModeFlag);
 }
