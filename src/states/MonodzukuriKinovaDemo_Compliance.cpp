@@ -60,6 +60,7 @@ bool MonodzukuriKinovaDemo_Compliance::run(mc_control::fsm::Controller & ctl_)
     transitionTime_ += ctl.dt_ctrl;
     if(!transitionStarted_)
     {
+      // ctl.compPostureTask->setGains(10.0, 20.0);
       ctl.compEETask->reset();
       ctl.compEETask->positionTask->refVel(Eigen::Vector3d(0, 0, 0));
       transitionStarted_ = true;

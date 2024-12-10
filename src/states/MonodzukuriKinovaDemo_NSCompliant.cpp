@@ -1,5 +1,6 @@
 #include "MonodzukuriKinovaDemo_NSCompliant.h"
 #include "../MonodzukuriKinovaDemo.h"
+#include <mc_rtc/gui/Label.h>
 
 void MonodzukuriKinovaDemo_NSCompliant::configure(
     const mc_rtc::Configuration &config) {}
@@ -38,6 +39,10 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   ctl.posTorqueFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(4);
+  
+  ctl.gui()->addElement({"Controller"}, mc_rtc::gui::NumberInput("Dual Compliance Wrench Threshold", [this]() { return dualComplianceThreshold_; },
+                    [this](double threshold) { dualComplianceThreshold_ = threshold; }));
+  ctl.gui()->addElement({"Controller"}, mc_rtc::gui::Label("Current force: ", [this]() { return currentForce_; }));
 
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Sensor Testing "
                        "state - Position controlled");
