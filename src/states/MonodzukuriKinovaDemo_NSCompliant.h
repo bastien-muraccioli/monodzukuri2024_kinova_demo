@@ -28,7 +28,7 @@ private:
   bool nsCompliantFlag_ = true;
   bool eeCompliantFlag_ = false;
   bool admittanceFlag_ = false;
-  double dualComplianceThreshold_ = 3.0;
+  double dualComplianceThreshold_ = 6.0;
   double currentForce_ = 0.0;
 
   bool isPositionControl_ = false;
