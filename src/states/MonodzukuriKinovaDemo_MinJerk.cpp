@@ -11,7 +11,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   // auto & robot = ctl.robot();
 
   // Disable feedback from external forces estimator (safer)
-  if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+  if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
     ctl.datastore().call("EF_Estimator::toggleActive");
   }
   // Enable force sensor usage if not active
@@ -22,14 +22,14 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
                                      FITTS_RESIDUAL_GAIN);
 
   mj_task = std::make_shared<mc_tasks::MinimumJerkTask>(
-      "FT_sensor_mounting", ctl.robots(), ctl.robot().robotIndex(), 10000.0);
+      "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 10000.0);
 
   Eigen::Vector3d LQR_Q;
-  LQR_Q << 1e8, 1e5, 1e3;
+  LQR_Q << 1e8, 1e7, 1e3;
   mj_task->LQR_Q(LQR_Q);
-  mj_task->LQR_R(10);
-  mj_task->W_e(Eigen::Vector3d({20, 100, 5}));
-  mj_task->W_u(Eigen::Vector4d(1, 20000, 5000, 5000));
+  mj_task->LQR_R(1);
+  mj_task->W_e(Eigen::Vector3d({1, 1, 1}));
+  mj_task->W_u(Eigen::Vector4d(1, 200, 200, 100));
   mj_task->fitts_b(0.32);
   mj_task->fitts_a(-0.09);
   mj_task->react_time(0.25);
@@ -38,8 +38,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.compPostureTask->makeCompliant(false);
 
   oriTask_ = std::make_shared<mc_tasks::OrientationTask>(
-      "FT_sensor_wrench", ctl.robots(), ctl.robot().robotIndex(), 20.0,
-      10000.0);
+      "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 20.0, 1000.0);
   oriTask_->orientation(
       Eigen::Quaterniond(-0.5, 0.5, 0.5, 0.5).toRotationMatrix());
   // ctl.solver().addTask(oriTask_);
@@ -52,9 +51,15 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.compPostureTask->stiffness(100);
   ctl.compPostureTask->makeCompliant(false);
 
-  controlled_frame = &ctl.robot().frame("FT_sensor_mounting");
+  controlled_frame = &ctl.robot().frame("DS4_tool");
 
   ctl.datastore().assign<std::string>("ControlMode", "Torque");
+  if (ctl.datastore().has("mc_kortex::setLambda")) {
+    ctl.datastore().call<void, std::vector<double>>(
+        "mc_kortex::setLambda", {2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0});
+    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 0.1);
+    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1.0);
+  }
 
   auto new_target_pos = ctl.game.getTargetPos();
   float new_target_radius = ctl.game.getTargetRadius();
@@ -111,9 +116,8 @@ bool MonodzukuriKinovaDemo_MinJerk::run(mc_control::fsm::Controller &ctl_) {
     std::string bodyName = controlled_frame->body();
     sva::PTransformd transform(ctl.robot().bodyPosW(bodyName));
     Eigen::Vector3d pose =
-        ctl.robot().frame("FT_sensor_mounting").position().translation();
-    Eigen::Vector3d vel =
-        ctl.robot().frame("FT_sensor_mounting").velocity().linear();
+        ctl.robot().frame("DS4_tool").position().translation();
+    Eigen::Vector3d vel = ctl.robot().frame("DS4_tool").velocity().linear();
     Eigen::Vector3d acc = transform.rotation().transpose() *
                               ctl.robot().bodyAccB(bodyName).linear() +
                           ctl.robot().bodyVelW(bodyName).angular().cross(vel);

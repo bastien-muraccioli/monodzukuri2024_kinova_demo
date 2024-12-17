@@ -1,23 +1,23 @@
 #include "MonodzukuriKinovaDemo_Compliance.h"
 #include "../MonodzukuriKinovaDemo.h"
 
-void MonodzukuriKinovaDemo_Compliance::configure(const mc_rtc::Configuration & config) {}
+void MonodzukuriKinovaDemo_Compliance::configure(
+    const mc_rtc::Configuration &config) {}
 
-void MonodzukuriKinovaDemo_Compliance::start(mc_control::fsm::Controller & ctl_)
-{
-  auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+void MonodzukuriKinovaDemo_Compliance::start(
+    mc_control::fsm::Controller &ctl_) {
+  auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
   // Disable feedback from external forces estimator (safer)
-  if(!ctl.datastore().call<bool>("EF_Estimator::isActive"))
-  {
+  if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
     ctl.datastore().call("EF_Estimator::toggleActive");
   }
   // Enable force sensor usage if not active
-  if(!ctl.datastore().call<bool>("EF_Estimator::useForceSensor"))
-  {
+  if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
     ctl.datastore().call("EF_Estimator::toggleForceSensor");
   }
-  ctl.datastore().call<void, double>("EF_Estimator::setGain", HIGH_RESIDUAL_GAIN);
+  ctl.datastore().call<void, double>("EF_Estimator::setGain",
+                                     HIGH_RESIDUAL_GAIN);
 
   // Setting gain of posture task for torque control mode
   ctl.compPostureTask->stiffness(0.0);
@@ -43,6 +43,12 @@ void MonodzukuriKinovaDemo_Compliance::start(mc_control::fsm::Controller & ctl_)
   ctl.compPostureTask->makeCompliant(false);
   ctl.solver().removeTask(ctl.compEETask);
   ctl.datastore().assign<std::string>("ControlMode", "Position");
+  if (ctl.datastore().has("mc_kortex::setLambda")) {
+    ctl.datastore().call<void, std::vector<double>>(
+        "mc_kortex::setLambda", {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0});
+    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 1000000);
+    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1000000);
+  }
 
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
@@ -51,63 +57,53 @@ void MonodzukuriKinovaDemo_Compliance::start(mc_control::fsm::Controller & ctl_)
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Compliance mode initialized");
 }
 
-bool MonodzukuriKinovaDemo_Compliance::run(mc_control::fsm::Controller & ctl_)
-{
-  auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  // mc_rtc::log::info("[Compliance mode] changeModeAvailable: {}, changeModeRequest: {}", ctl.changeModeAvailable, ctl.changeModeRequest);
-  if(ctl.changeModeRequest)
-  {
+bool MonodzukuriKinovaDemo_Compliance::run(mc_control::fsm::Controller &ctl_) {
+  auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+  // mc_rtc::log::info("[Compliance mode] changeModeAvailable: {},
+  // changeModeRequest: {}", ctl.changeModeAvailable, ctl.changeModeRequest);
+  if (ctl.changeModeRequest) {
     transitionTime_ += ctl.dt_ctrl;
-    if(!transitionStarted_)
-    {
+    if (!transitionStarted_) {
       // ctl.compPostureTask->setGains(10.0, 20.0);
       ctl.compEETask->reset();
       ctl.compEETask->positionTask->refVel(Eigen::Vector3d(0, 0, 0));
       transitionStarted_ = true;
     }
-    if(transitionTime_ > transitionDuration_)
-    {
+    if (transitionTime_ > transitionDuration_) {
       output("OK");
       return true;
     }
   }
 
   // Change mode from torque to position
-  if(changeModeRequest_)
-  {
-    if(ctl.robot().tvmRobot().alpha()->value().norm() < 0.01)
-    {
+  if (changeModeRequest_) {
+    if (ctl.robot().tvmRobot().alpha()->value().norm() < 0.01) {
       changeModeRequest_ = false;
       setPositionControl(ctl);
     }
   }
-  
-  if(!transitionStarted_ && !changeModeRequest_)
-  {
+
+  if (!transitionStarted_ && !changeModeRequest_) {
     controlModeManager(ctl);
   }
   return false;
 }
 
-void MonodzukuriKinovaDemo_Compliance::teardown(mc_control::fsm::Controller & ctl_)
-{
-  auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+void MonodzukuriKinovaDemo_Compliance::teardown(
+    mc_control::fsm::Controller &ctl_) {
+  auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 }
 
-void MonodzukuriKinovaDemo_Compliance::controlModeManager(mc_control::fsm::Controller & ctl_)
-{
-  auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+void MonodzukuriKinovaDemo_Compliance::controlModeManager(
+    mc_control::fsm::Controller &ctl_) {
+  auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  if(ctl.posTorqueFlag != isTorqueControl_)
-  {
+  if (ctl.posTorqueFlag != isTorqueControl_) {
     isTorqueControl_ = !isTorqueControl_;
-    if(isTorqueControl_)
-    {
+    if (isTorqueControl_) {
       mc_rtc::log::info("[Compliance mode] Transition to torque control");
       setTorqueControl(ctl);
-    }
-    else
-    {
+    } else {
       // Transition to position control
       mc_rtc::log::info("[Compliance mode] Transition to position control");
       changeModeRequest_ = true;
@@ -116,9 +112,9 @@ void MonodzukuriKinovaDemo_Compliance::controlModeManager(mc_control::fsm::Contr
   }
 }
 
-void MonodzukuriKinovaDemo_Compliance::setTorqueControl(mc_control::fsm::Controller & ctl_)
-{
-  auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+void MonodzukuriKinovaDemo_Compliance::setTorqueControl(
+    mc_control::fsm::Controller &ctl_) {
+  auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
   ctl.compPostureTask->stiffness(0.0);
   ctl.compPostureTask->damping(4.0);
   ctl.compPostureTask->weight(1);
@@ -138,9 +134,9 @@ void MonodzukuriKinovaDemo_Compliance::setTorqueControl(mc_control::fsm::Control
   ctl.datastore().assign<std::string>("ControlMode", "Torque");
 }
 
-void MonodzukuriKinovaDemo_Compliance::setPositionControl(mc_control::fsm::Controller & ctl_)
-{
-  auto & ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+void MonodzukuriKinovaDemo_Compliance::setPositionControl(
+    mc_control::fsm::Controller &ctl_) {
+  auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.5);
   ctl.compPostureTask->makeCompliant(false);
@@ -148,4 +144,5 @@ void MonodzukuriKinovaDemo_Compliance::setPositionControl(mc_control::fsm::Contr
   ctl.datastore().assign<std::string>("ControlMode", "Position");
 }
 
-EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_Compliance", MonodzukuriKinovaDemo_Compliance)
+EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_Compliance",
+                    MonodzukuriKinovaDemo_Compliance)

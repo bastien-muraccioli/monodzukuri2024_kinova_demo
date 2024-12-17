@@ -32,6 +32,12 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
   ctl.posTorqueFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(6);
+  if (ctl.datastore().has("mc_kortex::setLambda")) {
+    ctl.datastore().call<void, std::vector<double>>(
+        "mc_kortex::setLambda", {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0});
+    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 1000000);
+    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1000000);
+  }
 
   mc_rtc::log::success(
       "[MonodzukuriKinovaDemo] Sinus Compliance mode initialized");
@@ -72,9 +78,8 @@ bool MonodzukuriKinovaDemo_SinCompliance::run(
     ctl.datastore().assign<std::string>("ControlMode", "Position");
   }
 
-  if(start_moving_ && changeModeRequest_) {
-    if(ctl.robot().tvmRobot().alpha()->value().norm() < 0.01)
-    {
+  if (start_moving_ && changeModeRequest_) {
+    if (ctl.robot().tvmRobot().alpha()->value().norm() < 0.01) {
       changeModeRequest_ = false;
       setPositionControl(ctl);
     }
@@ -114,7 +119,7 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
   // If press the Circle button, change between position and torque control
   if (ctl.posTorqueFlag && !isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] Torque controlled");
-     // Enable feedback from external forces estimator (safer)
+    // Enable feedback from external forces estimator (safer)
     if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
       ctl.datastore().call("EF_Estimator::toggleActive");
     }
@@ -139,7 +144,7 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     isCompliantControl_ = true;
     ctl.compEETask->makeCompliant(true);
     ctl.game.setControlMode(6);
-    
+
   } else if (!ctl.compliantFlag && isCompliantControl_ && isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] EEF no Compliant");
     isCompliantControl_ = false;
@@ -148,9 +153,10 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
   }
 }
 
-void MonodzukuriKinovaDemo_SinCompliance::setPositionControl(mc_control::fsm::Controller &ctl_) {
+void MonodzukuriKinovaDemo_SinCompliance::setPositionControl(
+    mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-   // Disable feedback from external forces estimator (safer)
+  // Disable feedback from external forces estimator (safer)
   if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
     ctl.datastore().call("EF_Estimator::toggleActive");
   }
