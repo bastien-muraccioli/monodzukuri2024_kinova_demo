@@ -1,31 +1,32 @@
 #pragma once
 
 #include <mc_control/fsm/Controller.h>
+#include <mc_joystick_plugin/joystick_inputs.h>
+#include <mc_rbdyn/Collision.h>
 #include <mc_rbdyn/VirtualTorqueSensor.h>
 #include <mc_tasks/CompliantEndEffectorTask.h>
 #include <mc_tasks/CompliantPostureTask.h>
-#include <mc_rbdyn/Collision.h>
-#include <mc_joystick_plugin/joystick_inputs.h>
 
 #include "api.h"
 
-#include <thread>
 #include "ui.h"
+#include <thread>
 
 #define FITTS_RESIDUAL_GAIN 30.0
 #define HIGH_RESIDUAL_GAIN 10.0
 #define LOW_RESIDUAL_GAIN 0.5
 
-struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo : public mc_control::fsm::Controller
-{
-  MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config);
+struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
+    : public mc_control::fsm::Controller {
+  MonodzukuriKinovaDemo(mc_rbdyn::RobotModulePtr rm, double dt,
+                        const mc_rtc::Configuration &config);
 
   bool run() override;
 
-  void reset(const mc_control::ControllerResetData & reset_data) override;
+  void reset(const mc_control::ControllerResetData &reset_data) override;
 
   // Update the Dynamics and the Collisions constraints for the controller
-  void updateConstraints(bool closeLoop); 
+  void updateConstraints(bool closeLoop);
   void updateConstraints(void);
 
   // Dynamics velocity damper parameters
@@ -51,26 +52,35 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo : public mc_control::f
   // OpenGL GUI
   FittsGame game = FittsGame();
   std::thread gameThread;
-  double robot_radius = 0.2;
+  double robot_radius = 0.3;
   position target_pose;
 
-
   // Joypad controller
-  bool joypadTriggerControlFlag = false;  // When you press the trigger button R2 (RT in the pluggin), you enter in torque control mode otherwise itś position control mode
-  bool joypadComplianceModeFlag = false;  // When you press the right pad button, you enter in compliance mode
-  bool joypadNullSpaceModeFlag = false;   // When you press the up pad button, you enter in nullspace mode
-  bool joypadCompliSinusModeFlag = false; // When you press the bottom pad button, you enter in compliance sinus mode
-  bool joypadMinJerkModeFlag = false;     // When you press the left pad button, you enter in minimum jerk mode
-  
-  // When you press the X button (A in the pluggin), 
-    // In MinJerkState: you activate the Fitts Law experiment
-    // In NullSpaceState: you activate the Double Compliance
-  bool activateFlag = false;   
-  bool compliantFlag = false; // When you press Square in NS mode, you activate the end-effector compliance
-  bool posTorqueFlag = false; // When you press Circle in NS mode, you can change between the position or torque control
-  bool nsCompliantFlag = false; // When you press Triangle in NS mode, you activate the nullspace compliance
+  bool joypadTriggerControlFlag =
+      false; // When you press the trigger button R2 (RT in the pluggin), you
+             // enter in torque control mode otherwise itś position control mode
+  bool joypadComplianceModeFlag = false; // When you press the right pad button,
+                                         // you enter in compliance mode
+  bool joypadNullSpaceModeFlag =
+      false; // When you press the up pad button, you enter in nullspace mode
+  bool joypadCompliSinusModeFlag =
+      false; // When you press the bottom pad button, you enter in compliance
+             // sinus mode
+  bool joypadMinJerkModeFlag = false; // When you press the left pad button, you
+                                      // enter in minimum jerk mode
 
-  bool changeModeAvailable = true;        
+  // When you press the X button (A in the pluggin),
+  // In MinJerkState: you activate the Fitts Law experiment
+  // In NullSpaceState: you activate the Double Compliance
+  bool activateFlag = false;
+  bool compliantFlag = false; // When you press Square in NS mode, you activate
+                              // the end-effector compliance
+  bool posTorqueFlag = false; // When you press Circle in NS mode, you can
+                              // change between the position or torque control
+  bool nsCompliantFlag = false; // When you press Triangle in NS mode, you
+                                // activate the nullspace compliance
+
+  bool changeModeAvailable = true;
   bool changeModeRequest = false;
 
   double dt_ctrl;
@@ -81,7 +91,7 @@ private:
   void getPostureTarget(void);
 
   void joypadManager(void);
-  
+
   // State index
   int stateIndex_;
 
@@ -93,8 +103,10 @@ private:
   bool downPadLastState_ = false;
   bool rightPadLastState_ = false;
   bool leftPadLastState_ = false;
-  bool r1ButtonLastState_ = false; // Change torque mode in Custom (RB button in the pluggin)
-  bool l1ButtonLastState_ = false; // Change torque mode in Default (LB button in the pluggin)
+  bool r1ButtonLastState_ =
+      false; // Change torque mode in Custom (RB button in the pluggin)
+  bool l1ButtonLastState_ =
+      false; // Change torque mode in Default (LB button in the pluggin)
   bool xButtonLastState_ = false;
   bool squareButtonLastState_ = false;
   bool triangleButtonLastState_ = false;

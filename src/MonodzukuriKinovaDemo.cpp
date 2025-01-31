@@ -20,14 +20,14 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
 
   // Initialize the future tasks values
   compEETask = std::make_shared<mc_tasks::CompliantEndEffectorTask>(
-      "FT_sensor_mounting", robots(), robot().robotIndex(), 1.0, 10000.0);
+      "DS4_tool", robots(), robot().robotIndex(), 1.0, 10000.0);
   postureHome = {{"joint_1", {0}},    {"joint_2", {0.262}},
                  {"joint_3", {3.14}}, {"joint_4", {-2.269}},
                  {"joint_5", {0}},    {"joint_6", {0.96}},
                  {"joint_7", {1.57}}};
-  postureTarget = {{"joint_1", {0}},    {"joint_2", {0.59}},
-                   {"joint_3", {3.14}}, {"joint_4", {-1.56}},
-                   {"joint_5", {0}},    {"joint_6", {0.483}},
+  postureTarget = {{"joint_1", {0}},    {"joint_2", {0.58}},
+                   {"joint_3", {3.14}}, {"joint_4", {-1.84}},
+                   {"joint_5", {0}},    {"joint_6", {0.85}},
                    {"joint_7", {1.57}}};
   postureCalibration = {{"joint_1", {0}},    {"joint_2", {0.32}},
                         {"joint_3", {3.14}}, {"joint_4", {-1.46}},
@@ -37,7 +37,7 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
   // Initalize the current task
   taskOrientation_ =
       Eigen::Quaterniond(1, -1, -1, -1).normalized().toRotationMatrix();
-  taskPosition_ = Eigen::Vector3d(0.68, 0.0, 0.45);
+  taskPosition_ = Eigen::Vector3d(0.75, 0.0, 0.4);
   posture_target_log.setZero(robot().mb().nrJoints());
   solver().removeTask(getPostureTask(robot().name()));
   compPostureTask = std::make_shared<mc_tasks::CompliantPostureTask>(

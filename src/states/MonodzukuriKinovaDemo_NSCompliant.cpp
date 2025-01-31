@@ -21,8 +21,12 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   ctl.datastore().call<void, double>("EF_Estimator::setGain",
                                      HIGH_RESIDUAL_GAIN);
 
-  admittance_task = std::make_shared<mc_tasks::force::AdmittanceTask>(
-      "FT_sensor_wrench", ctl.robots(), ctl.robot().robotIndex(), 5.0, 10000.0);
+  // admittance_task = std::make_shared<mc_tasks::force::AdmittanceTask>(
+  //     "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 5.0, 10000.0);
+
+  realRobot = &ctl.realRobot();
+
+  t = 0;
 
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.5);
@@ -38,23 +42,130 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   ctl.compliantFlag = false;
   ctl.posTorqueFlag = false; // false: position control, true: torque control
 
+  auto gui = ctl.gui();
+
+  compEETask = ctl.compEETask;
+
   ctl.game.setControlMode(4);
   if (ctl.datastore().has("mc_kortex::setLambda")) {
     ctl.datastore().call<void, std::vector<double>>(
         "mc_kortex::setLambda", {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0});
-    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 1000000);
-    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1000000);
+    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 0.1);
+    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1);
   }
+
+  ctl.gui()->addElement({"Controller"},
+                        mc_rtc::gui::NumberInput(
+                            "Dual Compliance Wrench Threshold",
+                            [this]() { return dualComplianceMaxThreshold_; },
+                            [this](double threshold) {
+                              dualComplianceMaxThreshold_ = threshold;
+                            }));
+  ctl.gui()->addElement({"Controller"},
+                        mc_rtc::gui::Label("Current force: ",
+                                           [this]() { return currentForce_; }));
+  ctl.gui()->addElement({"Controller"},
+                        mc_rtc::gui::NumberInput(
+                            "Dual Compliance Wrench Threshold",
+                            [this]() { return dualComplianceMaxThreshold_; },
+                            [this](double threshold) {
+                              dualComplianceMaxThreshold_ = threshold;
+                            }));
+  ctl.gui()->addElement({"Controller"},
+                        mc_rtc::gui::NumberInput(
+                            "Dual Compliance Wrench Min Threshold",
+                            [this]() { return dualComplianceMinThreshold_; },
+                            [this](double threshold) {
+                              dualComplianceMinThreshold_ = threshold;
+                            }));
+  ctl.gui()->addElement({"Controller"},
+                        mc_rtc::gui::Label("Current force: ",
+                                           [this]() { return currentForce_; }));
+
+  ctl.gui()->addElement(
+      {"Controller"},
+      mc_rtc::gui::ArrayInput(
+          "Error", {"x", "y", "z"},
+          [this]() -> Eigen::Vector3d {
+            return (compEETask->positionTask->position() -
+                    realRobot->bodyPosW("DS4_tool").translation()) *
+                   1e3;
+          },
+          [this](Eigen::Vector3d v) {}));
 
   ctl.gui()->addElement(
       {"Controller"},
       mc_rtc::gui::NumberInput(
-          "Dual Compliance Wrench Threshold",
-          [this]() { return dualComplianceThreshold_; },
-          [this](double threshold) { dualComplianceThreshold_ = threshold; }));
-  ctl.gui()->addElement({"Controller"},
-                        mc_rtc::gui::Label("Current force: ",
-                                           [this]() { return currentForce_; }));
+          "Big rotor inertia",
+          [this]() {
+            return realRobot->mb()
+                .joint(realRobot->mb().jointIndexByName("joint_1"))
+                .rotorInertia();
+          },
+          [this](double Ir) {
+            realRobot->mb().setJointRotorInertia(
+                realRobot->mb().jointIndexByName("joint_1"), Ir);
+            realRobot->mb().setJointRotorInertia(
+                realRobot->mb().jointIndexByName("joint_2"), Ir);
+            realRobot->mb().setJointRotorInertia(
+                realRobot->mb().jointIndexByName("joint_3"), Ir);
+            realRobot->mb().setJointRotorInertia(
+                realRobot->mb().jointIndexByName("joint_4"), Ir);
+          }),
+      mc_rtc::gui::NumberInput(
+          "Small rotor inertia",
+          [this]() {
+            return realRobot->mb()
+                .joint(realRobot->mb().jointIndexByName("joint_5"))
+                .rotorInertia();
+          },
+          [this](double Ir) {
+            realRobot->mb().setJointRotorInertia(
+                realRobot->mb().jointIndexByName("joint_5"), Ir);
+            realRobot->mb().setJointRotorInertia(
+                realRobot->mb().jointIndexByName("joint_6"), Ir);
+            realRobot->mb().setJointRotorInertia(
+                realRobot->mb().jointIndexByName("joint_7"), Ir);
+          }));
+
+  ctl.gui()->addElement(
+      this, {"Controller"},
+      mc_rtc::gui::Button("Recreate plots", [this, gui]() {
+        gui->removePlot("EE error");
+        gui->addPlot(
+            "EE error", mc_rtc::gui::plot::X("t", [this]() { return t; }),
+            mc_rtc::gui::plot::Y(
+                "t",
+                [this]() {
+                  return (compEETask->positionTask->position().z() -
+                          realRobot->bodyPosW("DS4_tool").translation().z()) *
+                         1e3;
+                },
+                mc_rtc::gui::Color::Red));
+      }));
+
+  ctl.gui()->addPlot(
+      "EE error", mc_rtc::gui::plot::X("t", [this]() { return t; }),
+      mc_rtc::gui::plot::Y(
+          "t",
+          [this]() {
+            return (compEETask->positionTask->position().z() -
+                    realRobot->bodyPosW("DS4_tool").translation().z()) *
+                   1e3;
+          },
+          mc_rtc::gui::Color::Red));
+
+  ctl.logger().addLogEntry("realRobot_error", this, [this]() {
+    return (compEETask->positionTask->position().z() -
+            realRobot->bodyPosW("DS4_tool").translation().z()) *
+           1e3;
+  });
+  ctl.logger().addLogEntry("realRobot_body_vel_w_DS4_tool", this, [this]() {
+    return realRobot->bodyVelW("DS4_tool").linear();
+  });
+  ctl.logger().addLogEntry("realRobot_body_pos_w_DS4_tool", this, [this]() {
+    return realRobot->bodyPosW("DS4_tool").translation();
+  });
 
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Sensor Testing "
                        "state - Position controlled");
@@ -62,6 +173,8 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
 
 bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+
+  t += ctl.timeStep;
 
   // Exit State
   if (ctl.changeModeRequest) {
@@ -108,7 +221,7 @@ bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller &ctl_) {
 void MonodzukuriKinovaDemo_NSCompliant::teardown(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  ctl.solver().removeTask(admittance_task);
+  ctl.gui()->removePlot("EE error");
 }
 
 void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(
@@ -182,54 +295,69 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
   // ctl.robot().forceSensor("EEForceSensor").FT_sensor_wrench().norm();
   mc_rtc::log::info("[Null Space mode] Current force: {}", currentForce_);
 
-  if (currentForce_ > dualComplianceThreshold_) {
-    if (!admittanceFlag_) {
-      mc_rtc::log::info("Above threshold, admittance control activated");
+  if (currentForce_ >= dualComplianceMaxThreshold_) {
 
-      // IMPORTANT: disable feedback from external forces estimator, not
-      // compatible with admittance control
-      if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-        ctl.datastore().call("EF_Estimator::toggleActive");
-      }
-      admittanceControl(ctl);
-      admittanceFlag_ = true;
+    mc_rtc::log::info(
+        "Above threshold, compliant end-effector control activated");
+
+    // IMPORTANT: disable feedback from external forces estimator, not
+    // compatible with admittance control if
+    // (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+    //   ctl.datastore().call("EF_Estimator::toggleActive");
+    // }
+    dualComplianceControl(ctl);
+    if (!dualComplianceLoopFlag_) {
+      mc_rtc::log::info("DualCompliance control activated");
+      dualComplianceLoopFlag_ = true;
+      ctl.compPostureTask->stiffness(0.0);
+      ctl.compPostureTask->damping(5.0);
+      ctl.compPostureTask->weight(1);
+      ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
+      ctl.compEETask->positionTask->stiffness(0);
+      ctl.compEETask->positionTask->damping(15);
+      ctl.compEETask->positionTask->weight(10000);
+      ctl.compEETask->orientationTask->stiffness(0);
+      ctl.compEETask->orientationTask->damping(15);
+      ctl.compEETask->orientationTask->weight(10000);
+      ctl.compEETask->makeCompliant(true);
       ctl.datastore().assign<std::string>("ControlMode", "Torque");
     }
-  } else {
-    if (admittanceFlag_) {
-      mc_rtc::log::info("Below threshold, null space control activated");
-      if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-        ctl.datastore().call("EF_Estimator::toggleActive");
-      }
-      nullSpaceControl(ctl);
-      admittanceFlag_ = false;
+  } else if (currentForce_ < dualComplianceMinThreshold_ &&
+             dualComplianceLoopFlag_) {
+    mc_rtc::log::info("Below threshold, null space control activated");
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
     }
+    nullSpaceControl(ctl);
+    dualComplianceLoopFlag_ = false;
+  } else if (currentForce_ >= dualComplianceMinThreshold_ &&
+             dualComplianceLoopFlag_) {
+    // mc_rtc::log::info("Within threshold, dual compliance control activated");
+    mc_rtc::log::info(
+        "Within threshold, compliant end-effector control activated");
+    dualComplianceControl(ctl);
   }
 }
 
-void MonodzukuriKinovaDemo_NSCompliant::admittanceControl(
+void MonodzukuriKinovaDemo_NSCompliant::dualComplianceControl(
     mc_control::fsm::Controller &ctl_) {
-  mc_rtc::log::info("[Null Space mode] Admittance control");
+  mc_rtc::log::info("[Null Space mode] DualCompliance Loop control");
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  ctl.solver().removeTask(ctl.compEETask);
+  // ctl.solver().removeTask(ctl.compEETask);
   ctl.compPostureTask->reset();
-  ctl.compPostureTask->stiffness(0.0);
-  ctl.compPostureTask->damping(5.0);
-  ctl.compPostureTask->weight(1);
-  ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
-  admittance_task->reset();
-  admittance_task->admittance(sva::ForceVecd(Eigen::Vector6d::Zero()));
-  admittance_task->weight(10000);
-  ctl.solver().addTask(admittance_task);
+  ctl.compEETask->reset();
+
+  // admittance_task->reset();
+  // admittance_task->admittance(sva::ForceVecd(Eigen::Vector6d::Zero()));
+  // admittance_task->weight(10000);
+  // ctl.solver().addTask(admittance_task);
 }
 
 void MonodzukuriKinovaDemo_NSCompliant::nullSpaceControl(
     mc_control::fsm::Controller &ctl_) {
   mc_rtc::log::info("[Null Space mode] Null Space control");
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-
-  ctl.solver().removeTask(admittance_task);
 
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.0);
@@ -239,10 +367,10 @@ void MonodzukuriKinovaDemo_NSCompliant::nullSpaceControl(
 
   ctl.compEETask->reset();
   ctl.compEETask->positionTask->reset();
-  ctl.compEETask->positionTask->stiffness(200);
+  ctl.compEETask->positionTask->stiffness(400);
   ctl.compEETask->positionTask->weight(10000);
   ctl.compEETask->orientationTask->reset();
-  ctl.compEETask->orientationTask->stiffness(200);
+  ctl.compEETask->orientationTask->stiffness(400);
   ctl.compEETask->orientationTask->weight(10000);
   ctl.compEETask->makeCompliant(eeCompliantFlag_);
   ctl.solver().addTask(ctl.compEETask);
@@ -251,8 +379,7 @@ void MonodzukuriKinovaDemo_NSCompliant::nullSpaceControl(
 void MonodzukuriKinovaDemo_NSCompliant::setPositionControl(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  ctl.solver().removeTask(admittance_task);
-  ctl.solver().removeTask(ctl.compEETask);
+  // ctl.solver().removeTask(ctl.compEETask);
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.5);
   ctl.compPostureTask->makeCompliant(false);

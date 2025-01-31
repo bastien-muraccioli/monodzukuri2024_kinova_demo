@@ -38,28 +38,24 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.compPostureTask->makeCompliant(false);
 
   oriTask_ = std::make_shared<mc_tasks::OrientationTask>(
-      "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 20.0, 1000.0);
+      "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 100.0, 1000.0);
   oriTask_->orientation(
       Eigen::Quaterniond(-0.5, 0.5, 0.5, 0.5).toRotationMatrix());
-  // ctl.solver().addTask(oriTask_);
+  ctl.solver().addTask(oriTask_);
 
-  init_pose = ctl.robot().bodyPosW("FT_sensor_wrench").translation() +
+  init_pose = ctl.robot().bodyPosW("DS4_tool").translation() +
               Eigen::Vector3d(0.1, 0.0, 0.0);
   ctl.target_pose.first = init_pose(1);
   ctl.target_pose.second = init_pose(2);
 
-  ctl.compPostureTask->stiffness(100);
-  ctl.compPostureTask->makeCompliant(false);
+  ctl.compPostureTask->stiffness(1);
+  ctl.compPostureTask->damping(200);
+  ctl.compPostureTask->weight(10);
+  ctl.compPostureTask->makeCompliant(true);
 
   controlled_frame = &ctl.robot().frame("DS4_tool");
 
   ctl.datastore().assign<std::string>("ControlMode", "Torque");
-  if (ctl.datastore().has("mc_kortex::setLambda")) {
-    ctl.datastore().call<void, std::vector<double>>(
-        "mc_kortex::setLambda", {2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0});
-    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 0.1);
-    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1.0);
-  }
 
   auto new_target_pos = ctl.game.getTargetPos();
   float new_target_radius = ctl.game.getTargetRadius();

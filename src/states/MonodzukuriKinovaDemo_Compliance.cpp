@@ -46,8 +46,8 @@ void MonodzukuriKinovaDemo_Compliance::start(
   if (ctl.datastore().has("mc_kortex::setLambda")) {
     ctl.datastore().call<void, std::vector<double>>(
         "mc_kortex::setLambda", {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0});
-    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 1000000);
-    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1000000);
+    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 0.1);
+    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1);
   }
 
   ctl.changeModeAvailable = true;

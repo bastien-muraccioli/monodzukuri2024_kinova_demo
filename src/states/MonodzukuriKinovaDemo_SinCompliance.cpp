@@ -19,6 +19,8 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
   ctl.datastore().call<void, double>("EF_Estimator::setGain",
                                      HIGH_RESIDUAL_GAIN);
 
+  realRobot = &ctl.realRobot();
+
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.5);
   ctl.compPostureTask->target(ctl.postureTarget);
@@ -28,16 +30,32 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
 
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
-  ctl.compliantFlag = true;
+  ctl.compliantFlag = false;
   ctl.posTorqueFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(6);
   if (ctl.datastore().has("mc_kortex::setLambda")) {
     ctl.datastore().call<void, std::vector<double>>(
         "mc_kortex::setLambda", {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0});
-    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 1000000);
-    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1000000);
+    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 0.1);
+    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1);
   }
+
+  ctl.gui()->addElement(this, {"Controller", "Sin"},
+                        mc_rtc::gui::Trajectory("Trajectory", [this]() {
+                          return visualSinTraj();
+                        }));
+
+  ctl.logger().addLogEntry("realRobot_body_vel_w_DS4_tool", this, [this]() {
+    return realRobot->bodyVelW("DS4_tool").linear();
+  });
+  ctl.logger().addLogEntry("realRobot_body_pos_w_DS4_tool", this, [this]() {
+    return realRobot->bodyPosW("DS4_tool").translation();
+  });
+
+  // ctl.compEETask->positionTask->reset();
+  // init_x = ctl.compEETask->positionTask->position().x();
+  // init_z = ctl.compEETask->positionTask->position().y();
 
   mc_rtc::log::success(
       "[MonodzukuriKinovaDemo] Sinus Compliance mode initialized");
@@ -66,10 +84,10 @@ bool MonodzukuriKinovaDemo_SinCompliance::run(
     start_moving_ = true;
     ctl.compEETask->reset();
     ctl.compEETask->positionTask->weight(10000);
-    ctl.compEETask->positionTask->stiffness(10);
+    ctl.compEETask->positionTask->stiffness(400);
     ctl.compEETask->positionTask->position(ctl.taskPosition_);
     ctl.compEETask->orientationTask->weight(10000);
-    ctl.compEETask->orientationTask->stiffness(10);
+    ctl.compEETask->orientationTask->stiffness(400);
     ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
     ctl.compEETask->makeCompliant(false);
     ctl.solver().addTask(ctl.compEETask);
@@ -89,15 +107,15 @@ bool MonodzukuriKinovaDemo_SinCompliance::run(
   if (start_moving_ && !transitionStarted_ && !changeModeRequest_) {
     controlModeManager(ctl);
     ctlTime_ += ctl.dt_ctrl;
-    ctl.compEETask->positionTask->position(
-        Eigen::Vector3d(0.68, yValue_, 0.3 + R_ * std::sin(omega_ * ctlTime_)));
+    ctl.compEETask->positionTask->position(Eigen::Vector3d(
+        init_x, yValue_, init_z + R_ * std::sin(omega_ * 2 * ctlTime_)));
     ctl.compEETask->positionTask->refVel(
-        Eigen::Vector3d(0, 0.1 * (yDirection_ ? 1 : -1),
-                        omega_ * R_ * std::cos(omega_ * ctlTime_)));
+        Eigen::Vector3d(0, 0.2 * (yDirection_ ? 1 : -1),
+                        2 * omega_ * R_ * std::cos(omega_ * 2 * ctlTime_)));
     ctl.compEETask->positionTask->refAccel(Eigen::Vector3d(
-        0, 0, -omega_ * omega_ * R_ * std::sin(omega_ * ctlTime_)));
+        0, 0, -4 * omega_ * omega_ * R_ * std::sin(omega_ * 2 * ctlTime_)));
 
-    yValue_ += (yDirection_ ? 1 : -1) * ctl.dt_ctrl / 10;
+    yValue_ += (yDirection_ ? 1 : -1) * ctl.dt_ctrl * 0.2;
 
     if (yValue_ >= maxY_ || yValue_ <= minY_) {
       yDirection_ = !yDirection_;
@@ -112,6 +130,26 @@ void MonodzukuriKinovaDemo_SinCompliance::teardown(
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 }
 
+std::vector<Eigen::Vector3d>
+MonodzukuriKinovaDemo_SinCompliance::visualSinTraj() {
+  const int num_points = 225;
+  std::vector<Eigen::Vector3d> traj(num_points);
+  double t = 0.0;
+  double y = 0.0;
+  bool dir = true;
+  for (size_t i = 0; i < num_points; i++) {
+    t += 0.01;
+    traj[i] =
+        Eigen::Vector3d(init_x, y, init_z + R_ * std::sin(omega_ * 2 * t));
+    y += (dir ? 1 : -1) * 0.01 * 2 * 0.1;
+    if (y >= maxY_ || y <= minY_) {
+      dir = !dir;
+    }
+  }
+
+  return traj;
+}
+
 void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
@@ -124,8 +162,8 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
       ctl.datastore().call("EF_Estimator::toggleActive");
     }
     isTorqueControl_ = true;
-    ctl.compEETask->positionTask->stiffness(100);
-    ctl.compEETask->orientationTask->stiffness(100);
+    ctl.compEETask->positionTask->stiffness(200);
+    ctl.compEETask->orientationTask->stiffness(200);
     ctl.compEETask->makeCompliant(isCompliantControl_);
     ctl.compPostureTask->stiffness(0.0);
     ctl.compPostureTask->damping(5.0);
