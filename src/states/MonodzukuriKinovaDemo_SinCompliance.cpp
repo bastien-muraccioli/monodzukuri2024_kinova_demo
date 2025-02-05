@@ -46,11 +46,11 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
                           return visualSinTraj();
                         }));
 
-  ctl.logger().addLogEntry("realRobot_body_vel_w_DS4_tool", this, [this]() {
-    return realRobot->bodyVelW("DS4_tool").linear();
+  ctl.logger().addLogEntry("realRobot_body_vel_w_FT_sensor_mounting", this, [this]() {
+    return realRobot->bodyVelW("FT_sensor_mounting").linear();
   });
-  ctl.logger().addLogEntry("realRobot_body_pos_w_DS4_tool", this, [this]() {
-    return realRobot->bodyPosW("DS4_tool").translation();
+  ctl.logger().addLogEntry("realRobot_body_pos_w_FT_sensor_mounting", this, [this]() {
+    return realRobot->bodyPosW("FT_sensor_mounting").translation();
   });
 
   // ctl.compEETask->positionTask->reset();

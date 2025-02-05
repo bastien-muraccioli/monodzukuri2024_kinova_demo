@@ -22,7 +22,7 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
                                      HIGH_RESIDUAL_GAIN);
 
   // admittance_task = std::make_shared<mc_tasks::force::AdmittanceTask>(
-  //     "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 5.0, 10000.0);
+  //     "FT_sensor_mounting", ctl.robots(), ctl.robot().robotIndex(), 5.0, 10000.0);
 
   realRobot = &ctl.realRobot();
 
@@ -88,7 +88,7 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
           "Error", {"x", "y", "z"},
           [this]() -> Eigen::Vector3d {
             return (compEETask->positionTask->position() -
-                    realRobot->bodyPosW("DS4_tool").translation()) *
+                    realRobot->bodyPosW("FT_sensor_mounting").translation()) *
                    1e3;
           },
           [this](Eigen::Vector3d v) {}));
@@ -138,7 +138,7 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
                 "t",
                 [this]() {
                   return (compEETask->positionTask->position().z() -
-                          realRobot->bodyPosW("DS4_tool").translation().z()) *
+                          realRobot->bodyPosW("FT_sensor_mounting").translation().z()) *
                          1e3;
                 },
                 mc_rtc::gui::Color::Red));
@@ -150,21 +150,21 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
           "t",
           [this]() {
             return (compEETask->positionTask->position().z() -
-                    realRobot->bodyPosW("DS4_tool").translation().z()) *
+                    realRobot->bodyPosW("FT_sensor_mounting").translation().z()) *
                    1e3;
           },
           mc_rtc::gui::Color::Red));
 
   ctl.logger().addLogEntry("realRobot_error", this, [this]() {
     return (compEETask->positionTask->position().z() -
-            realRobot->bodyPosW("DS4_tool").translation().z()) *
+            realRobot->bodyPosW("FT_sensor_mounting").translation().z()) *
            1e3;
   });
-  ctl.logger().addLogEntry("realRobot_body_vel_w_DS4_tool", this, [this]() {
-    return realRobot->bodyVelW("DS4_tool").linear();
+  ctl.logger().addLogEntry("realRobot_body_vel_w_FT_sensor_mounting", this, [this]() {
+    return realRobot->bodyVelW("FT_sensor_mounting").linear();
   });
-  ctl.logger().addLogEntry("realRobot_body_pos_w_DS4_tool", this, [this]() {
-    return realRobot->bodyPosW("DS4_tool").translation();
+  ctl.logger().addLogEntry("realRobot_body_pos_w_FT_sensor_mounting", this, [this]() {
+    return realRobot->bodyPosW("FT_sensor_mounting").translation();
   });
 
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Sensor Testing "

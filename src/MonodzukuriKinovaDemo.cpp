@@ -20,7 +20,7 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
 
   // Initialize the future tasks values
   compEETask = std::make_shared<mc_tasks::CompliantEndEffectorTask>(
-      "DS4_tool", robots(), robot().robotIndex(), 1.0, 10000.0);
+      "FT_sensor_mounting", robots(), robot().robotIndex(), 1.0, 10000.0);
   postureHome = {{"joint_1", {0}},    {"joint_2", {0.262}},
                  {"joint_3", {3.14}}, {"joint_4", {-2.269}},
                  {"joint_5", {0}},    {"joint_6", {0.96}},

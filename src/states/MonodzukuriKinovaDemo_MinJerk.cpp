@@ -22,7 +22,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
                                      FITTS_RESIDUAL_GAIN);
 
   mj_task = std::make_shared<mc_tasks::MinimumJerkTask>(
-      "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 10000.0);
+      "FT_sensor_mounting", ctl.robots(), ctl.robot().robotIndex(), 10000.0);
 
   Eigen::Vector3d LQR_Q;
   LQR_Q << 1e8, 1e7, 1e3;
@@ -38,12 +38,12 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.compPostureTask->makeCompliant(false);
 
   oriTask_ = std::make_shared<mc_tasks::OrientationTask>(
-      "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 100.0, 1000.0);
+      "FT_sensor_mounting", ctl.robots(), ctl.robot().robotIndex(), 100.0, 1000.0);
   oriTask_->orientation(
       Eigen::Quaterniond(-0.5, 0.5, 0.5, 0.5).toRotationMatrix());
   ctl.solver().addTask(oriTask_);
 
-  init_pose = ctl.robot().bodyPosW("DS4_tool").translation() +
+  init_pose = ctl.robot().bodyPosW("FT_sensor_mounting").translation() +
               Eigen::Vector3d(0.1, 0.0, 0.0);
   ctl.target_pose.first = init_pose(1);
   ctl.target_pose.second = init_pose(2);
@@ -53,7 +53,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.compPostureTask->weight(10);
   ctl.compPostureTask->makeCompliant(true);
 
-  controlled_frame = &ctl.robot().frame("DS4_tool");
+  controlled_frame = &ctl.robot().frame("FT_sensor_mounting");
 
   ctl.datastore().assign<std::string>("ControlMode", "Torque");
 
@@ -112,8 +112,8 @@ bool MonodzukuriKinovaDemo_MinJerk::run(mc_control::fsm::Controller &ctl_) {
     std::string bodyName = controlled_frame->body();
     sva::PTransformd transform(ctl.robot().bodyPosW(bodyName));
     Eigen::Vector3d pose =
-        ctl.robot().frame("DS4_tool").position().translation();
-    Eigen::Vector3d vel = ctl.robot().frame("DS4_tool").velocity().linear();
+        ctl.robot().frame("FT_sensor_mounting").position().translation();
+    Eigen::Vector3d vel = ctl.robot().frame("FT_sensor_mounting").velocity().linear();
     Eigen::Vector3d acc = transform.rotation().transpose() *
                               ctl.robot().bodyAccB(bodyName).linear() +
                           ctl.robot().bodyVelW(bodyName).angular().cross(vel);
