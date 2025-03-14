@@ -15,7 +15,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
     ctl.datastore().call("EF_Estimator::toggleActive");
   }
   // Enable force sensor usage if not active
-  if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
+  if (ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
     ctl.datastore().call("EF_Estimator::toggleForceSensor");
   }
   ctl.datastore().call<void, double>("EF_Estimator::setGain",

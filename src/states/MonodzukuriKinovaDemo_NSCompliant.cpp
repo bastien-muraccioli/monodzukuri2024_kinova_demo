@@ -310,7 +310,7 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
       mc_rtc::log::info("DualCompliance control activated");
       dualComplianceLoopFlag_ = true;
       ctl.compPostureTask->stiffness(0.0);
-      ctl.compPostureTask->damping(5.0);
+      ctl.compPostureTask->damping(2.0);
       ctl.compPostureTask->weight(1);
       ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
       ctl.compEETask->positionTask->stiffness(0);
@@ -361,7 +361,7 @@ void MonodzukuriKinovaDemo_NSCompliant::nullSpaceControl(
 
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.0);
-  ctl.compPostureTask->damping(5.0);
+  ctl.compPostureTask->damping(1.0);
   ctl.compPostureTask->weight(1);
   ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
 

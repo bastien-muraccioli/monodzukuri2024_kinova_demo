@@ -30,7 +30,7 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
 
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
-  ctl.compliantFlag = false;
+  ctl.compliantFlag = true;
   ctl.posTorqueFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(6);
@@ -89,7 +89,7 @@ bool MonodzukuriKinovaDemo_SinCompliance::run(
     ctl.compEETask->orientationTask->weight(10000);
     ctl.compEETask->orientationTask->stiffness(400);
     ctl.compEETask->orientationTask->orientation(ctl.taskOrientation_);
-    ctl.compEETask->makeCompliant(false);
+    ctl.compEETask->makeCompliant(true);
     ctl.solver().addTask(ctl.compEETask);
     ctl.compPostureTask->makeCompliant(false);
     ctl.compPostureTask->stiffness(0.5);
@@ -108,14 +108,14 @@ bool MonodzukuriKinovaDemo_SinCompliance::run(
     controlModeManager(ctl);
     ctlTime_ += ctl.dt_ctrl;
     ctl.compEETask->positionTask->position(Eigen::Vector3d(
-        init_x, yValue_, init_z + R_ * std::sin(omega_ * 2 * ctlTime_)));
+        init_x, yValue_, init_z + R_ * std::sin(omega_ * 1 * ctlTime_)));
     ctl.compEETask->positionTask->refVel(
-        Eigen::Vector3d(0, 0.2 * (yDirection_ ? 1 : -1),
-                        2 * omega_ * R_ * std::cos(omega_ * 2 * ctlTime_)));
+        Eigen::Vector3d(0, 0.1 * (yDirection_ ? 1 : -1),
+                        1 * omega_ * R_ * std::cos(omega_ * 1 * ctlTime_)));
     ctl.compEETask->positionTask->refAccel(Eigen::Vector3d(
-        0, 0, -4 * omega_ * omega_ * R_ * std::sin(omega_ * 2 * ctlTime_)));
+        0, 0, -1 * omega_ * omega_ * R_ * std::sin(omega_ * 1 * ctlTime_)));
 
-    yValue_ += (yDirection_ ? 1 : -1) * ctl.dt_ctrl * 0.2;
+    yValue_ += (yDirection_ ? 1 : -1) * ctl.dt_ctrl * 0.1;
 
     if (yValue_ >= maxY_ || yValue_ <= minY_) {
       yDirection_ = !yDirection_;
@@ -140,8 +140,8 @@ MonodzukuriKinovaDemo_SinCompliance::visualSinTraj() {
   for (size_t i = 0; i < num_points; i++) {
     t += 0.01;
     traj[i] =
-        Eigen::Vector3d(init_x, y, init_z + R_ * std::sin(omega_ * 2 * t));
-    y += (dir ? 1 : -1) * 0.01 * 2 * 0.1;
+        Eigen::Vector3d(init_x, y, init_z + R_ * std::sin(omega_ * 1 * t));
+    y += (dir ? 1 : -1) * 0.01 * 1 * 0.1;
     if (y >= maxY_ || y <= minY_) {
       dir = !dir;
     }

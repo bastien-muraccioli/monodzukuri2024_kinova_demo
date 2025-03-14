@@ -26,7 +26,7 @@ void MonodzukuriKinovaDemo_Compliance::start(
 
   ctl.compEETask->reset();
   ctl.compEETask->positionTask->weight(10000);
-  ctl.compEETask->positionTask->stiffness(10);
+  ctl.compEETask->positionTask->stiffness(30);
   ctl.compEETask->positionTask->position(ctl.taskPosition_);
   ctl.compEETask->orientationTask->weight(10000);
   ctl.compEETask->orientationTask->stiffness(30);
@@ -121,7 +121,7 @@ void MonodzukuriKinovaDemo_Compliance::setTorqueControl(
 
   ctl.compEETask->reset();
   ctl.compEETask->positionTask->weight(10000);
-  ctl.compEETask->positionTask->stiffness(10);
+  ctl.compEETask->positionTask->stiffness(30);
   ctl.compEETask->positionTask->position(ctl.taskPosition_);
   ctl.compEETask->orientationTask->weight(10000);
   ctl.compEETask->orientationTask->stiffness(30);
