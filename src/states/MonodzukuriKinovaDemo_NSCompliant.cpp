@@ -22,7 +22,7 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
                                      HIGH_RESIDUAL_GAIN);
 
   // admittance_task = std::make_shared<mc_tasks::force::AdmittanceTask>(
-  //     "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 5.0, 10000.0);
+  //     ctl.tool_frame, ctl.robots(), ctl.robot().robotIndex(), 5.0, 10000.0);
 
   realRobot = &ctl.realRobot();
 
@@ -47,12 +47,16 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   compEETask = ctl.compEETask;
 
   ctl.game.setControlMode(4);
-  if (ctl.datastore().has("mc_kortex::setLambda")) {
-    ctl.datastore().call<void, std::vector<double>>(
-        "mc_kortex::setLambda", {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0});
-    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 0.1);
-    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1);
-  }
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_stiction",
+      {4.0, 4.0, 4.0, 4.0, 1.8, 1.8, 1.8});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_coulomb",
+      {3.5, 3.5, 3.5, 3.5, 1.5, 1.5, 1.5});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_viscous",
+      {2.0, 2.0, 2.0, 2.0, 2.0, 2.0});
+  ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 40.0);
 
   ctl.gui()->addElement({"Controller"},
                         mc_rtc::gui::NumberInput(
@@ -82,13 +86,15 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
                         mc_rtc::gui::Label("Current force: ",
                                            [this]() { return currentForce_; }));
 
+  std::string tool_frame = ctl.tool_frame;
+
   ctl.gui()->addElement(
       {"Controller"},
       mc_rtc::gui::ArrayInput(
           "Error", {"x", "y", "z"},
-          [this]() -> Eigen::Vector3d {
+          [this, tool_frame]() -> Eigen::Vector3d {
             return (compEETask->positionTask->position() -
-                    realRobot->bodyPosW("DS4_tool").translation()) *
+                    realRobot->bodyPosW(tool_frame).translation()) *
                    1e3;
           },
           [this](Eigen::Vector3d v) {}));
@@ -130,15 +136,15 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
 
   ctl.gui()->addElement(
       this, {"Controller"},
-      mc_rtc::gui::Button("Recreate plots", [this, gui]() {
+      mc_rtc::gui::Button("Recreate plots", [this, gui, tool_frame]() {
         gui->removePlot("EE error");
         gui->addPlot(
             "EE error", mc_rtc::gui::plot::X("t", [this]() { return t; }),
             mc_rtc::gui::plot::Y(
                 "t",
-                [this]() {
+                [this, tool_frame]() {
                   return (compEETask->positionTask->position().z() -
-                          realRobot->bodyPosW("DS4_tool").translation().z()) *
+                          realRobot->bodyPosW(tool_frame).translation().z()) *
                          1e3;
                 },
                 mc_rtc::gui::Color::Red));
@@ -148,24 +154,26 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
       "EE error", mc_rtc::gui::plot::X("t", [this]() { return t; }),
       mc_rtc::gui::plot::Y(
           "t",
-          [this]() {
+          [this, tool_frame]() {
             return (compEETask->positionTask->position().z() -
-                    realRobot->bodyPosW("DS4_tool").translation().z()) *
+                    realRobot->bodyPosW(tool_frame).translation().z()) *
                    1e3;
           },
           mc_rtc::gui::Color::Red));
 
-  ctl.logger().addLogEntry("realRobot_error", this, [this]() {
+  ctl.logger().addLogEntry("realRobot_error", this, [this, tool_frame]() {
     return (compEETask->positionTask->position().z() -
-            realRobot->bodyPosW("DS4_tool").translation().z()) *
+            realRobot->bodyPosW(tool_frame).translation().z()) *
            1e3;
   });
-  ctl.logger().addLogEntry("realRobot_body_vel_w_DS4_tool", this, [this]() {
-    return realRobot->bodyVelW("DS4_tool").linear();
-  });
-  ctl.logger().addLogEntry("realRobot_body_pos_w_DS4_tool", this, [this]() {
-    return realRobot->bodyPosW("DS4_tool").translation();
-  });
+  ctl.logger().addLogEntry("realRobot_body_vel_w_DS4_tool", this,
+                           [this, tool_frame]() {
+                             return realRobot->bodyVelW(tool_frame).linear();
+                           });
+  ctl.logger().addLogEntry(
+      "realRobot_body_pos_w_DS4_tool", this, [this, tool_frame]() {
+        return realRobot->bodyPosW(tool_frame).translation();
+      });
 
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Sensor Testing "
                        "state - Position controlled");
@@ -242,6 +250,9 @@ void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(
       nullSpaceControl(ctl);
     }
     ctl.datastore().assign<std::string>("ControlMode", "Torque");
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
+    }
   }
 
   if (!isPositionControl_) {
@@ -320,6 +331,9 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
       ctl.compEETask->orientationTask->damping(15);
       ctl.compEETask->orientationTask->weight(10000);
       ctl.compEETask->makeCompliant(true);
+      if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+        ctl.datastore().call("EF_Estimator::toggleActive");
+      }
       ctl.datastore().assign<std::string>("ControlMode", "Torque");
     }
   } else if (currentForce_ < dualComplianceMinThreshold_ &&
@@ -383,6 +397,10 @@ void MonodzukuriKinovaDemo_NSCompliant::setPositionControl(
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.5);
   ctl.compPostureTask->makeCompliant(false);
+  // Disable feedback from external forces estimator (safer)
+  if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+    ctl.datastore().call("EF_Estimator::toggleActive");
+  }
   ctl.datastore().assign<std::string>("ControlMode", "Position");
 }
 

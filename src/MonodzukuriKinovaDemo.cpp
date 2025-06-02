@@ -11,6 +11,8 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
   velocityDamperFlag_ = true;
   closeLoopVelocityDamper_ = true;
 
+  tool_frame = config("tool_frame", (std::string) "FT_sensor_wrench");
+
   // Initialize the constraints
   selfCollisionConstraint->setCollisionsDampers(solver(), {m_, lambda_});
   dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
@@ -20,7 +22,7 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
 
   // Initialize the future tasks values
   compEETask = std::make_shared<mc_tasks::CompliantEndEffectorTask>(
-      "DS4_tool", robots(), robot().robotIndex(), 1.0, 10000.0);
+      tool_frame, robots(), robot().robotIndex(), 1.0, 10000.0);
   postureHome = {{"joint_1", {0}},    {"joint_2", {0.262}},
                  {"joint_3", {3.14}}, {"joint_4", {-2.269}},
                  {"joint_5", {0}},    {"joint_6", {0.96}},

@@ -9,7 +9,7 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
   // Enable feedback from external forces estimator (safer)
-  if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+  if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
     ctl.datastore().call("EF_Estimator::toggleActive");
   }
   // Enable force sensor usage if not active
@@ -34,24 +34,31 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
   ctl.posTorqueFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(6);
-  if (ctl.datastore().has("mc_kortex::setLambda")) {
-    ctl.datastore().call<void, std::vector<double>>(
-        "mc_kortex::setLambda", {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0});
-    ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 0.1);
-    ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1);
-  }
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_stiction",
+      {4.0, 4.0, 4.0, 4.0, 1.8, 1.8, 1.8});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_coulomb",
+      {3.5, 3.5, 3.5, 3.5, 1.5, 1.5, 1.5});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_viscous",
+      {2.0, 2.0, 2.0, 2.0, 2.0, 2.0});
+  ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 40.0);
 
   ctl.gui()->addElement(this, {"Controller", "Sin"},
                         mc_rtc::gui::Trajectory("Trajectory", [this]() {
                           return visualSinTraj();
                         }));
 
-  ctl.logger().addLogEntry("realRobot_body_vel_w_DS4_tool", this, [this]() {
-    return realRobot->bodyVelW("DS4_tool").linear();
-  });
-  ctl.logger().addLogEntry("realRobot_body_pos_w_DS4_tool", this, [this]() {
-    return realRobot->bodyPosW("DS4_tool").translation();
-  });
+  std::string tool_frame = ctl.tool_frame;
+  ctl.logger().addLogEntry("realRobot_body_vel_w_DS4_tool", this,
+                           [this, tool_frame]() {
+                             return realRobot->bodyVelW(tool_frame).linear();
+                           });
+  ctl.logger().addLogEntry(
+      "realRobot_body_pos_w_DS4_tool", this, [this, tool_frame]() {
+        return realRobot->bodyPosW(tool_frame).translation();
+      });
 
   // ctl.compEETask->positionTask->reset();
   // init_x = ctl.compEETask->positionTask->position().x();
@@ -171,6 +178,9 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     ctl.datastore().assign<std::string>("ControlMode", "Torque");
   } else if (isTorqueControl_ && !ctl.posTorqueFlag) {
     mc_rtc::log::info("[Sinus Compliance mode] Position controlled");
+    if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
+    }
     isTorqueControl_ = false;
     changeModeRequest_ = true;
     ctl.compEETask->refAccel(Eigen::Vector6d ::Zero());

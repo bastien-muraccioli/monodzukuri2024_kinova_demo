@@ -15,19 +15,30 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
     ctl.datastore().call("EF_Estimator::toggleActive");
   }
   // Enable force sensor usage if not active
-  if (ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
+  if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
     ctl.datastore().call("EF_Estimator::toggleForceSensor");
   }
   ctl.datastore().call<void, double>("EF_Estimator::setGain",
                                      FITTS_RESIDUAL_GAIN);
 
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_stiction",
+      {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_coulomb",
+      {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_viscous",
+      {2.0, 2.0, 2.0, 2.0, 1.5, 1.5, 1.5});
+  ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 10.0);
+
   mj_task = std::make_shared<mc_tasks::MinimumJerkTask>(
-      "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 10000.0);
+      ctl.tool_frame, ctl.robots(), ctl.robot().robotIndex(), 10000.0);
 
   Eigen::Vector3d LQR_Q;
-  LQR_Q << 1e8, 1e7, 1e3;
+  LQR_Q << 1e8, 1e7, 1e2;
   mj_task->LQR_Q(LQR_Q);
-  mj_task->LQR_R(1);
+  mj_task->LQR_R(1e0);
   mj_task->W_e(Eigen::Vector3d({1, 1, 1}));
   mj_task->W_u(Eigen::Vector4d(1, 200, 200, 100));
   mj_task->fitts_b(0.32);
@@ -37,23 +48,30 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.compPostureTask->stiffness(100.0);
   ctl.compPostureTask->makeCompliant(false);
 
-  oriTask_ = std::make_shared<mc_tasks::OrientationTask>(
-      "DS4_tool", ctl.robots(), ctl.robot().robotIndex(), 100.0, 1000.0);
+  oriTask_ = std::make_shared<mc_tasks::CompliantOrientationTask>(
+      ctl.tool_frame, ctl.robots(), ctl.robot().robotIndex(), 100.0, 10000.0);
+  posTask_ = std::make_shared<mc_tasks::PositionTask>(
+      ctl.tool_frame, ctl.robots(), ctl.robot().robotIndex(), 50.0, 10000.0);
   oriTask_->orientation(
       Eigen::Quaterniond(-0.5, 0.5, 0.5, 0.5).toRotationMatrix());
-  ctl.solver().addTask(oriTask_);
-
-  init_pose = ctl.robot().bodyPosW("DS4_tool").translation() +
+  posTask_->reset();
+  init_pose = ctl.robot().bodyPosW(ctl.tool_frame).translation() +
               Eigen::Vector3d(0.1, 0.0, 0.0);
+  posTask_->position(init_pose);
+  oriTask_->setComplianceVector(Eigen::Vector3d(0.2, 0.2, 0.2));
+
+  ctl.solver().addTask(oriTask_);
+  ctl.solver().addTask(posTask_);
+
   ctl.target_pose.first = init_pose(1);
   ctl.target_pose.second = init_pose(2);
 
-  ctl.compPostureTask->stiffness(1);
-  ctl.compPostureTask->damping(200);
-  ctl.compPostureTask->weight(10);
+  ctl.compPostureTask->stiffness(100);
+  // ctl.compPostureTask->damping(200);
+  ctl.compPostureTask->weight(1);
   ctl.compPostureTask->makeCompliant(true);
 
-  controlled_frame = &ctl.robot().frame("DS4_tool");
+  controlled_frame = &ctl.robot().frame(ctl.tool_frame);
 
   ctl.datastore().assign<std::string>("ControlMode", "Torque");
 
@@ -105,6 +123,10 @@ bool MonodzukuriKinovaDemo_MinJerk::run(mc_control::fsm::Controller &ctl_) {
   // While the state is running
   if (!transitionStarted_) {
     if (ctl.activateFlag && !start_moving_) {
+      if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+        ctl.datastore().call("EF_Estimator::toggleActive");
+      }
+      ctl.solver().removeTask(posTask_);
       ctl.solver().addTask(mj_task);
       start_moving_ = true;
     }
@@ -112,8 +134,8 @@ bool MonodzukuriKinovaDemo_MinJerk::run(mc_control::fsm::Controller &ctl_) {
     std::string bodyName = controlled_frame->body();
     sva::PTransformd transform(ctl.robot().bodyPosW(bodyName));
     Eigen::Vector3d pose =
-        ctl.robot().frame("DS4_tool").position().translation();
-    Eigen::Vector3d vel = ctl.robot().frame("DS4_tool").velocity().linear();
+        ctl.robot().frame(ctl.tool_frame).position().translation();
+    Eigen::Vector3d vel = ctl.robot().frame(ctl.tool_frame).velocity().linear();
     Eigen::Vector3d acc = transform.rotation().transpose() *
                               ctl.robot().bodyAccB(bodyName).linear() +
                           ctl.robot().bodyVelW(bodyName).angular().cross(vel);

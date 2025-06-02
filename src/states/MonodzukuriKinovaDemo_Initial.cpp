@@ -33,6 +33,16 @@ void MonodzukuriKinovaDemo_Initial::start(mc_control::fsm::Controller &ctl_) {
     ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1);
   }
   ctl.game.setControlMode(5);
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_stiction",
+      {4.0, 4.0, 4.0, 4.0, 1.8, 1.8, 1.8});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_coulomb",
+      {3.5, 3.5, 3.5, 3.5, 1.5, 1.5, 1.5});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_viscous",
+      {2.0, 2.0, 2.0, 2.0, 2.0, 2.0});
+  ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 40.0);
 
   mc_rtc::log::success("[MonodzukuriKinovaDemo] Switched to Initial state - "
                        "Position controlled");

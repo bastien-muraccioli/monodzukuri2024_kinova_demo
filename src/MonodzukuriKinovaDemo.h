@@ -13,7 +13,7 @@
 #include <thread>
 
 #define FITTS_RESIDUAL_GAIN 30.0
-#define HIGH_RESIDUAL_GAIN 10.0
+#define HIGH_RESIDUAL_GAIN 5.0
 #define LOW_RESIDUAL_GAIN 0.5
 
 struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
@@ -28,6 +28,9 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
   // Update the Dynamics and the Collisions constraints for the controller
   void updateConstraints(bool closeLoop);
   void updateConstraints(void);
+
+  // tool frame
+  std::string tool_frame;
 
   // Dynamics velocity damper parameters
   double m_;
