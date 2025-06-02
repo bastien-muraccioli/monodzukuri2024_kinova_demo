@@ -2,7 +2,7 @@
 
 #include <mc_control/fsm/State.h>
 
-#include <mc_tasks/CompliantOrientationTask.h>
+#include <mc_tasks/OrientationTask.h>
 #include <mc_tasks/PositionTask.h>
 
 #include <mc_tasks/MinimumJerkTask.h>
@@ -21,7 +21,7 @@ struct MonodzukuriKinovaDemo_MinJerk : mc_control::fsm::State {
 
 private:
   std::shared_ptr<mc_tasks::MinimumJerkTask> mj_task;
-  std::shared_ptr<mc_tasks::CompliantOrientationTask> oriTask_;
+  std::shared_ptr<mc_tasks::OrientationTask> oriTask_;
   std::shared_ptr<mc_tasks::PositionTask> posTask_;
 
   Eigen::Vector3d init_pose;

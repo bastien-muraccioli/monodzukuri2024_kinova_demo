@@ -21,16 +21,16 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.datastore().call<void, double>("EF_Estimator::setGain",
                                      FITTS_RESIDUAL_GAIN);
 
-  ctl.datastore().call<void, std::vector<double>>(
-      "set_kinova_friction_compensation_stiction",
-      {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
-  ctl.datastore().call<void, std::vector<double>>(
-      "set_kinova_friction_compensation_coulomb",
-      {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
-  ctl.datastore().call<void, std::vector<double>>(
-      "set_kinova_friction_compensation_viscous",
-      {2.0, 2.0, 2.0, 2.0, 1.5, 1.5, 1.5});
-  ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 10.0);
+  // ctl.datastore().call<void, std::vector<double>>(
+  //     "set_kinova_friction_compensation_stiction",
+  //     {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
+  // ctl.datastore().call<void, std::vector<double>>(
+  //     "set_kinova_friction_compensation_coulomb",
+  //     {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
+  // ctl.datastore().call<void, std::vector<double>>(
+  //     "set_kinova_friction_compensation_viscous",
+  //     {2.0, 2.0, 2.0, 2.0, 1.5, 1.5, 1.5});
+  // ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 10.0);
 
   mj_task = std::make_shared<mc_tasks::MinimumJerkTask>(
       ctl.tool_frame, ctl.robots(), ctl.robot().robotIndex(), 10000.0);
@@ -48,7 +48,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.compPostureTask->stiffness(100.0);
   ctl.compPostureTask->makeCompliant(false);
 
-  oriTask_ = std::make_shared<mc_tasks::CompliantOrientationTask>(
+  oriTask_ = std::make_shared<mc_tasks::OrientationTask>(
       ctl.tool_frame, ctl.robots(), ctl.robot().robotIndex(), 100.0, 10000.0);
   posTask_ = std::make_shared<mc_tasks::PositionTask>(
       ctl.tool_frame, ctl.robots(), ctl.robot().robotIndex(), 50.0, 10000.0);
@@ -58,7 +58,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   init_pose = ctl.robot().bodyPosW(ctl.tool_frame).translation() +
               Eigen::Vector3d(0.1, 0.0, 0.0);
   posTask_->position(init_pose);
-  oriTask_->setComplianceVector(Eigen::Vector3d(0.2, 0.2, 0.2));
+  // oriTask_->setComplianceVector(Eigen::Vector3d(0.2, 0.2, 0.2));
 
   ctl.solver().addTask(oriTask_);
   ctl.solver().addTask(posTask_);

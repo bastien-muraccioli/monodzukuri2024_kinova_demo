@@ -47,16 +47,16 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   compEETask = ctl.compEETask;
 
   ctl.game.setControlMode(4);
-  ctl.datastore().call<void, std::vector<double>>(
-      "set_kinova_friction_compensation_stiction",
-      {4.0, 4.0, 4.0, 4.0, 1.8, 1.8, 1.8});
-  ctl.datastore().call<void, std::vector<double>>(
-      "set_kinova_friction_compensation_coulomb",
-      {3.5, 3.5, 3.5, 3.5, 1.5, 1.5, 1.5});
-  ctl.datastore().call<void, std::vector<double>>(
-      "set_kinova_friction_compensation_viscous",
-      {2.0, 2.0, 2.0, 2.0, 2.0, 2.0});
-  ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 40.0);
+  // ctl.datastore().call<void, std::vector<double>>(
+  //     "set_kinova_friction_compensation_stiction",
+  //     {4.0, 4.0, 4.0, 4.0, 1.8, 1.8, 1.8});
+  // ctl.datastore().call<void, std::vector<double>>(
+  //     "set_kinova_friction_compensation_coulomb",
+  //     {3.5, 3.5, 3.5, 3.5, 1.5, 1.5, 1.5});
+  // ctl.datastore().call<void, std::vector<double>>(
+  //     "set_kinova_friction_compensation_viscous",
+  //     {2.0, 2.0, 2.0, 2.0, 2.0, 2.0});
+  // ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 40.0);
 
   ctl.gui()->addElement({"Controller"},
                         mc_rtc::gui::NumberInput(
