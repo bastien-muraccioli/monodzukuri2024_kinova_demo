@@ -9,17 +9,17 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  // Disable feedback from external forces estimator (safer)
-  if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-    ctl.datastore().call("EF_Estimator::toggleActive");
+  if(ctl.datastore().has("EF_Estimator::isActive")) {
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
+    }
+    // Enable force sensor usage if not active
+    if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
+      ctl.datastore().call("EF_Estimator::toggleForceSensor");
+    }
+    ctl.datastore().call<void, double>("EF_Estimator::setGain",
+                                      HIGH_RESIDUAL_GAIN);
   }
-  // Enable force sensor usage if not active
-  if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
-    ctl.datastore().call("EF_Estimator::toggleForceSensor");
-  }
-
-  ctl.datastore().call<void, double>("EF_Estimator::setGain",
-                                     HIGH_RESIDUAL_GAIN);
 
   // admittance_task = std::make_shared<mc_tasks::force::AdmittanceTask>(
   //     "FT_sensor_mounting", ctl.robots(), ctl.robot().robotIndex(), 5.0, 10000.0);
@@ -196,8 +196,11 @@ bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller &ctl_) {
     mc_rtc::log::info("[Null Space mode] Start moving");
     start_moving_ = true;
     ctl.datastore().assign<std::string>("ControlMode", "Torque");
-    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-      ctl.datastore().call("EF_Estimator::toggleActive");
+
+    if(ctl.datastore().has("EF_Estimator::isActive")) {
+      if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+        ctl.datastore().call("EF_Estimator::toggleActive");
+      }
     }
     nullSpaceControl(ctl);
   }
@@ -310,7 +313,7 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
       mc_rtc::log::info("DualCompliance control activated");
       dualComplianceLoopFlag_ = true;
       ctl.compPostureTask->stiffness(0.0);
-      ctl.compPostureTask->damping(5.0);
+      ctl.compPostureTask->damping(1.0);
       ctl.compPostureTask->weight(1);
       ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
       ctl.compEETask->positionTask->stiffness(0);
@@ -325,8 +328,11 @@ void MonodzukuriKinovaDemo_NSCompliant::dualComplianceLoop(
   } else if (currentForce_ < dualComplianceMinThreshold_ &&
              dualComplianceLoopFlag_) {
     mc_rtc::log::info("Below threshold, null space control activated");
-    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-      ctl.datastore().call("EF_Estimator::toggleActive");
+
+    if(ctl.datastore().has("EF_Estimator::isActive")) {
+      if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+        ctl.datastore().call("EF_Estimator::toggleActive");
+      }
     }
     nullSpaceControl(ctl);
     dualComplianceLoopFlag_ = false;
@@ -361,7 +367,7 @@ void MonodzukuriKinovaDemo_NSCompliant::nullSpaceControl(
 
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.0);
-  ctl.compPostureTask->damping(5.0);
+  ctl.compPostureTask->damping(1.0);
   ctl.compPostureTask->weight(1);
   ctl.compPostureTask->makeCompliant(nsCompliantFlag_);
 

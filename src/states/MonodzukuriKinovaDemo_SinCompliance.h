@@ -19,7 +19,7 @@ private:
   bool isTorqueControl_ = false;
   bool isCompliantControl_ = true;
   bool start_moving_ = false;
-  double ctlTime_ = 0;
+  double ctlTime_ = 0.0;
   double omega_ = 3;
   double R_ = 0.10;
   double minY_ = -0.4;
@@ -32,8 +32,8 @@ private:
   double posTorqueTransitionTime_ = 0.0;
   double posTorqueTransitionDuration_ = 1.0;
   bool posTorqueTransitionStarted_ = false;
-  double init_x = 0.75;
-  double init_z = 0.4;
+  double init_x = 0.68;
+  double init_z = 0.3;
 
   std::vector<Eigen::Vector3d> visualSinTraj();
 

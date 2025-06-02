@@ -9,15 +9,17 @@ void MonodzukuriKinovaDemo_Compliance::start(
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
   // Disable feedback from external forces estimator (safer)
-  if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-    ctl.datastore().call("EF_Estimator::toggleActive");
+  if(ctl.datastore().has("EF_Estimator::isActive")) {
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
+    }
+    // Enable force sensor usage if not active
+    if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
+      ctl.datastore().call("EF_Estimator::toggleForceSensor");
+    }
+    ctl.datastore().call<void, double>("EF_Estimator::setGain",
+                                      HIGH_RESIDUAL_GAIN);
   }
-  // Enable force sensor usage if not active
-  if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
-    ctl.datastore().call("EF_Estimator::toggleForceSensor");
-  }
-  ctl.datastore().call<void, double>("EF_Estimator::setGain",
-                                     HIGH_RESIDUAL_GAIN);
 
   // Setting gain of posture task for torque control mode
   ctl.compPostureTask->stiffness(0.0);

@@ -10,16 +10,17 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
   // auto & robot = ctl.robot();
 
-  // Disable feedback from external forces estimator (safer)
-  if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-    ctl.datastore().call("EF_Estimator::toggleActive");
+  if(ctl.datastore().has("EF_Estimator::isActive")) {
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
+    }
+    // Enable force sensor usage if not active
+    if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
+      ctl.datastore().call("EF_Estimator::toggleForceSensor");
+    }
+    ctl.datastore().call<void, double>("EF_Estimator::setGain",
+      FITTS_RESIDUAL_GAIN);
   }
-  // Enable force sensor usage if not active
-  if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
-    ctl.datastore().call("EF_Estimator::toggleForceSensor");
-  }
-  ctl.datastore().call<void, double>("EF_Estimator::setGain",
-                                     FITTS_RESIDUAL_GAIN);
 
   mj_task = std::make_shared<mc_tasks::MinimumJerkTask>(
       "FT_sensor_mounting", ctl.robots(), ctl.robot().robotIndex(), 10000.0);

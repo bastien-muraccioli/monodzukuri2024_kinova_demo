@@ -7,17 +7,17 @@ void MonodzukuriKinovaDemo_SinCompliance::configure(
 void MonodzukuriKinovaDemo_SinCompliance::start(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-
-  // Enable feedback from external forces estimator (safer)
-  if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-    ctl.datastore().call("EF_Estimator::toggleActive");
+  if(ctl.datastore().has("EF_Estimator::isActive")) {
+    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
+    }
+    // Enable force sensor usage if not active
+    if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
+      ctl.datastore().call("EF_Estimator::toggleForceSensor");
+    }
+    ctl.datastore().call<void, double>("EF_Estimator::setGain",
+                                      HIGH_RESIDUAL_GAIN);
   }
-  // Enable force sensor usage if not active
-  if (!ctl.datastore().call<bool>("EF_Estimator::useForceSensor")) {
-    ctl.datastore().call("EF_Estimator::toggleForceSensor");
-  }
-  ctl.datastore().call<void, double>("EF_Estimator::setGain",
-                                     HIGH_RESIDUAL_GAIN);
 
   realRobot = &ctl.realRobot();
 
@@ -54,8 +54,7 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
   });
 
   // ctl.compEETask->positionTask->reset();
-  // init_x = ctl.compEETask->positionTask->position().x();
-  // init_z = ctl.compEETask->positionTask->position().y();
+  
 
   mc_rtc::log::success(
       "[MonodzukuriKinovaDemo] Sinus Compliance mode initialized");
@@ -94,6 +93,11 @@ bool MonodzukuriKinovaDemo_SinCompliance::run(
     ctl.compPostureTask->makeCompliant(false);
     ctl.compPostureTask->stiffness(0.5);
     ctl.datastore().assign<std::string>("ControlMode", "Position");
+    init_x = ctl.realRobot().bodyPosW("FT_sensor_mounting").translation().x();
+    init_z = ctl.realRobot().bodyPosW("FT_sensor_mounting").translation().z();
+    mc_rtc::log::info("[Sinus Compliance mode] Initial position: x = {}, z = {}",
+                      init_x, init_z);
+    ctlTime_ = 0.0;
   }
 
   if (start_moving_ && changeModeRequest_) {
@@ -108,14 +112,14 @@ bool MonodzukuriKinovaDemo_SinCompliance::run(
     controlModeManager(ctl);
     ctlTime_ += ctl.dt_ctrl;
     ctl.compEETask->positionTask->position(Eigen::Vector3d(
-        init_x, yValue_, init_z + R_ * std::sin(omega_ * 2 * ctlTime_)));
+        init_x, yValue_, init_z + R_ * std::sin(omega_ * ctlTime_)));
     ctl.compEETask->positionTask->refVel(
-        Eigen::Vector3d(0, 0.2 * (yDirection_ ? 1 : -1),
-                        2 * omega_ * R_ * std::cos(omega_ * 2 * ctlTime_)));
+        Eigen::Vector3d(0, 0.1* (yDirection_ ? 1 : -1),
+                         omega_ * R_ * std::cos(omega_  * ctlTime_)));
     ctl.compEETask->positionTask->refAccel(Eigen::Vector3d(
-        0, 0, -4 * omega_ * omega_ * R_ * std::sin(omega_ * 2 * ctlTime_)));
+        0, 0, -omega_ * omega_ * R_ * std::sin(omega_  * ctlTime_)));
 
-    yValue_ += (yDirection_ ? 1 : -1) * ctl.dt_ctrl * 0.2;
+    yValue_ += (yDirection_ ? 1 : -1) * ctl.dt_ctrl * 0.1;
 
     if (yValue_ >= maxY_ || yValue_ <= minY_) {
       yDirection_ = !yDirection_;
@@ -158,8 +162,11 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
   if (ctl.posTorqueFlag && !isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] Torque controlled");
     // Enable feedback from external forces estimator (safer)
-    if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-      ctl.datastore().call("EF_Estimator::toggleActive");
+    
+    if(ctl.datastore().has("EF_Estimator::isActive")) {
+      if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+        ctl.datastore().call("EF_Estimator::toggleActive");
+      }
     }
     isTorqueControl_ = true;
     ctl.compEETask->positionTask->stiffness(200);
@@ -195,8 +202,11 @@ void MonodzukuriKinovaDemo_SinCompliance::setPositionControl(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
   // Disable feedback from external forces estimator (safer)
-  if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
-    ctl.datastore().call("EF_Estimator::toggleActive");
+
+  if(ctl.datastore().has("EF_Estimator::isActive")) {
+    if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
+      ctl.datastore().call("EF_Estimator::toggleActive");
+    }
   }
   ctl.compEETask->positionTask->stiffness(10);
   ctl.compEETask->orientationTask->stiffness(10);
