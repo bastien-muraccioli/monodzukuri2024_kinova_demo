@@ -55,6 +55,11 @@ transitions:
   - [MonodzukuriKinovaDemo_MinJerk, OK, MonodzukuriKinovaDemo_Initial, Auto]
   - [MonodzukuriKinovaDemo_Initial, SIN, MonodzukuriKinovaDemo_SinCompliance, Auto]
   - [MonodzukuriKinovaDemo_SinCompliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
+  - [MonodzukuriKinovaDemo_NSCompliant, DC, MonodzukuriKinovaDemo_DCompliant, Auto]
+  - [MonodzukuriKinovaDemo_DCompliant, NS, MonodzukuriKinovaDemo_NSCompliant, Auto]
+  - [MonodzukuriKinovaDemo_DCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
+  - [MonodzukuriKinovaDemo_DCompliant, RUN, MonodzukuriKinovaDemo_wayPointDCompliant, Auto]
+  - [MonodzukuriKinovaDemo_wayPointDCompliant, OK, MonodzukuriKinovaDemo_DCompliant, Auto]
   # - [MonodzukuriKinovaDemo_Initial, OK, MonodzukuriKinovaDemo_Calibration, Auto]
   # - [MonodzukuriKinovaDemo_Calibration, OK, MonodzukuriKinovaDemo_Initial, Auto]
 

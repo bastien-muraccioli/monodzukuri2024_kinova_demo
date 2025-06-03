@@ -1,0 +1,20 @@
+#pragma once
+
+#include <mc_control/fsm/State.h>
+#include <mc_tasks/CompliantEndEffectorTask.h>
+#include <mc_tvm/Robot.h>
+
+struct MonodzukuriKinovaDemo_wayPointDCompliant : mc_control::fsm::State {
+
+  void configure(const mc_rtc::Configuration &config) override;
+
+  void start(mc_control::fsm::Controller &ctl) override;
+
+  bool run(mc_control::fsm::Controller &ctl) override;
+
+  void teardown(mc_control::fsm::Controller &ctl) override;
+
+private:
+  int wayPointIndex_ = 0;
+
+};

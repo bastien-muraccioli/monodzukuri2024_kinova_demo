@@ -1,9 +1,9 @@
 #pragma once
 
 #include <mc_control/fsm/State.h>
-// #include <mc_tasks/AdmittanceTask.h>
 #include <mc_tasks/CompliantEndEffectorTask.h>
 #include <mc_tvm/Robot.h>
+#include <memory>
 
 struct MonodzukuriKinovaDemo_NSCompliant : mc_control::fsm::State {
 
@@ -16,22 +16,19 @@ struct MonodzukuriKinovaDemo_NSCompliant : mc_control::fsm::State {
   void teardown(mc_control::fsm::Controller &ctl) override;
 
 private:
-  // std::shared_ptr<mc_tasks::force::AdmittanceTask> admittance_task;
+
+  void addGui(mc_control::fsm::Controller &ctl);
+  void addLog(mc_control::fsm::Controller &ctl);
 
   void controlModeManager(mc_control::fsm::Controller &ctl);
-  void dualComplianceControl(mc_control::fsm::Controller &ctl);
-  void dualComplianceLoop(mc_control::fsm::Controller &ctl);
+  // void dualComplianceLoop(mc_control::fsm::Controller &ctl);
   void nullSpaceControl(mc_control::fsm::Controller &ctl);
   void setPositionControl(mc_control::fsm::Controller &ctl);
-  bool changeModeRequest_ = false;
+  bool changeToPosCtlRequest_ = false;
 
   bool dualComplianceFlag_ = false;
   bool nsCompliantFlag_ = true;
   bool eeCompliantFlag_ = false;
-  bool dualComplianceLoopFlag_ = false;
-  double dualComplianceMaxThreshold_ = 9.0;
-  double dualComplianceMinThreshold_ = 5.0;
-  double currentForce_ = 0.0;
 
   bool isPositionControl_ = false;
   bool start_moving_ = false;
@@ -39,9 +36,10 @@ private:
   double transitionDuration_ = 1.0;
   bool transitionStarted_ = false;
 
-  double t;
+  double t = 0.0;
+  std::string tool_frame;
 
-  std::shared_ptr<mc_tasks::CompliantEndEffectorTask> compEETask;
+  std::shared_ptr<typename mc_tasks::CompliantEndEffectorTask> compEETask;
 
   mc_rbdyn::Robot *realRobot;
 };

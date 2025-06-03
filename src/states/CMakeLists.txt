@@ -3,6 +3,7 @@ add_fsm_state_simple(MonodzukuriKinovaDemo_Compliance)
 add_fsm_state_simple(MonodzukuriKinovaDemo_SinCompliance)
 add_fsm_state_simple(MonodzukuriKinovaDemo_NSCompliant)
 add_fsm_state_simple(MonodzukuriKinovaDemo_MinJerk)
-# add_fsm_state_simple(MonodzukuriKinovaDemo_Calibration)
+add_fsm_state_simple(MonodzukuriKinovaDemo_DCompliant)
+add_fsm_state_simple(MonodzukuriKinovaDemo_wayPointDCompliant)
 
 add_fsm_data_directory(data)

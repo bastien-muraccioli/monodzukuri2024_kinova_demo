@@ -94,7 +94,7 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
       "Target: {}",
       Eigen::Vector3d(init_pose(0), target_circle(0), target_circle(1)));
 
-  ctl.activateFlag = false;
+  ctl.crossButtonFlag = false;
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
   ctl.game.setControlMode(3);
@@ -122,7 +122,7 @@ bool MonodzukuriKinovaDemo_MinJerk::run(mc_control::fsm::Controller &ctl_) {
 
   // While the state is running
   if (!transitionStarted_) {
-    if (ctl.activateFlag && !start_moving_) {
+    if (ctl.crossButtonFlag && !start_moving_) {
       if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
         ctl.datastore().call("EF_Estimator::toggleActive");
       }

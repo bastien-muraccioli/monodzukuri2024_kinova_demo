@@ -10,9 +10,13 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
   lambda_ = 70.0;
   velocityDamperFlag_ = true;
   closeLoopVelocityDamper_ = true;
+  jointNumber = robot(robots()[0].name()).refJointOrder().size();
 
   tool_frame = config("tool_frame", (std::string) "FT_sensor_wrench");
+  shoulder_frame = config("shoulder_frame", (std::string) "forearm_link");
 
+  mc_rtc::log::info(
+      "[MonodzukuriKinovaDemo] Tool frame: {}", tool_frame);
   // Initialize the constraints
   selfCollisionConstraint->setCollisionsDampers(solver(), {m_, lambda_});
   dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
@@ -23,6 +27,12 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
   // Initialize the future tasks values
   compEETask = std::make_shared<mc_tasks::CompliantEndEffectorTask>(
       tool_frame, robots(), robot().robotIndex(), 1.0, 10000.0);
+
+  compShoulderTask =
+      std::make_shared<mc_tasks::CompliantEndEffectorTask>(
+          shoulder_frame, robots(), robot().robotIndex(), 1.0, 10000.0);
+
+
   postureHome = {{"joint_1", {0}},    {"joint_2", {0.262}},
                  {"joint_3", {3.14}}, {"joint_4", {-2.269}},
                  {"joint_5", {0}},    {"joint_6", {0.96}},
@@ -95,8 +105,8 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
           [this]() { joypadTriggerControlFlag = !joypadTriggerControlFlag; }));
   gui()->addElement({"Controller"},
                     mc_rtc::gui::Checkbox(
-                        "Activate", [this]() { return activateFlag; },
-                        [this]() { activateFlag = !activateFlag; }));
+                        "Activate", [this]() { return crossButtonFlag; },
+                        [this]() { crossButtonFlag = !crossButtonFlag; }));
 
   mc_rtc::log::success("MonodzukuriKinovaDemo init done ");
 }
@@ -206,23 +216,23 @@ void MonodzukuriKinovaDemo::joypadManager(void) {
 
   if (buttonFunc(A) && buttonFunc(A) != xButtonLastState_) // X Button
   {
-    activateFlag = !activateFlag;
+    crossButtonFlag = !crossButtonFlag;
   }
 
   if (buttonFunc(Y) && buttonFunc(Y) != squareButtonLastState_) // Square Button
   {
-    compliantFlag = !compliantFlag;
+    squareButtonFlag = !squareButtonFlag;
   }
 
   if (buttonFunc(X) &&
       buttonFunc(X) != triangleButtonLastState_) // Triangle Button
   {
-    nsCompliantFlag = !nsCompliantFlag;
+    triangleButtonFlag = !triangleButtonFlag;
   }
 
   if (buttonFunc(B) && buttonFunc(B) != circleButtonLastState_) // Circle Button
   {
-    posTorqueFlag = !posTorqueFlag;
+    circleButtonFlag = !circleButtonFlag;
   }
 
   if (buttonFunc(RB) && buttonFunc(RB) != r1ButtonLastState_) // R1 Button

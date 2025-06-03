@@ -31,6 +31,7 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
 
   // tool frame
   std::string tool_frame;
+    std::string shoulder_frame;
 
   // Dynamics velocity damper parameters
   double m_;
@@ -40,6 +41,7 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
   // Tasks
   std::shared_ptr<mc_tasks::CompliantPostureTask> compPostureTask;
   std::shared_ptr<mc_tasks::CompliantEndEffectorTask> compEETask;
+  std::shared_ptr<mc_tasks::CompliantEndEffectorTask> compShoulderTask;
   // std::shared_ptr<mc_tasks::MinimumJerkTask> minJerkTask;
 
   // Targets
@@ -75,22 +77,27 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
   // When you press the X button (A in the pluggin),
   // In MinJerkState: you activate the Fitts Law experiment
   // In NullSpaceState: you activate the Double Compliance
-  bool activateFlag = false;
-  bool compliantFlag = false; // When you press Square in NS mode, you activate
+  bool crossButtonFlag = false;
+  bool squareButtonFlag = false; // When you press Square in NS mode, you activate
                               // the end-effector compliance
-  bool posTorqueFlag = false; // When you press Circle in NS mode, you can
+  bool circleButtonFlag = false; // When you press Circle in NS mode, you can
                               // change between the position or torque control
-  bool nsCompliantFlag = false; // When you press Triangle in NS mode, you
+  bool triangleButtonFlag = false; // When you press Triangle in NS mode, you
                                 // activate the nullspace compliance
 
   bool changeModeAvailable = true;
   bool changeModeRequest = false;
+
+//   std::vector<std::pair<sva::PTransformd, sva::PTransformd>> wayPoints; // Contains pairs of position/rotation of the end-effector and the shoulder
+    std::vector<std::map<std::string, std::vector<double>>> wayPoints;
+  int jointNumber;
 
   double dt_ctrl;
 
 private:
   mc_rtc::Configuration config_;
   std::vector<mc_rbdyn::Collision> collisions_;
+  
   void getPostureTarget(void);
 
   void joypadManager(void);

@@ -30,8 +30,8 @@ void MonodzukuriKinovaDemo_SinCompliance::start(
 
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
-  ctl.compliantFlag = true;
-  ctl.posTorqueFlag = false; // false: position control, true: torque control
+  ctl.squareButtonFlag = true;
+  ctl.circleButtonFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(6);
   // ctl.datastore().call<void, std::vector<double>>(
@@ -162,7 +162,7 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
   // If press the Circle button, change between position and torque control
-  if (ctl.posTorqueFlag && !isTorqueControl_) {
+  if (ctl.circleButtonFlag && !isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] Torque controlled");
     // Enable feedback from external forces estimator (safer)
     if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
@@ -176,7 +176,7 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     ctl.compPostureTask->damping(5.0);
     ctl.compPostureTask->makeCompliant(true);
     ctl.datastore().assign<std::string>("ControlMode", "Torque");
-  } else if (isTorqueControl_ && !ctl.posTorqueFlag) {
+  } else if (isTorqueControl_ && !ctl.circleButtonFlag) {
     mc_rtc::log::info("[Sinus Compliance mode] Position controlled");
     if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
       ctl.datastore().call("EF_Estimator::toggleActive");
@@ -187,13 +187,13 @@ void MonodzukuriKinovaDemo_SinCompliance::controlModeManager(
     ctl.compPostureTask->setGains(10.0, 20.0);
   }
 
-  if (ctl.compliantFlag && !isCompliantControl_ && isTorqueControl_) {
+  if (ctl.squareButtonFlag && !isCompliantControl_ && isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] EEF Compliant");
     isCompliantControl_ = true;
     ctl.compEETask->makeCompliant(true);
     ctl.game.setControlMode(6);
 
-  } else if (!ctl.compliantFlag && isCompliantControl_ && isTorqueControl_) {
+  } else if (!ctl.squareButtonFlag && isCompliantControl_ && isTorqueControl_) {
     mc_rtc::log::info("[Sinus Compliance mode] EEF no Compliant");
     isCompliantControl_ = false;
     ctl.compEETask->makeCompliant(false);

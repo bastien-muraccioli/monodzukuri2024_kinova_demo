@@ -52,7 +52,7 @@ void MonodzukuriKinovaDemo_Compliance::start(
 
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
-  ctl.posTorqueFlag = false; // false: position control, true: torque control
+  ctl.circleButtonFlag = false; // false: position control, true: torque control
   ctl.game.setControlMode(2);
   // ctl.datastore().call<void, std::vector<double>>(
   //     "set_kinova_friction_compensation_stiction",
@@ -108,7 +108,7 @@ void MonodzukuriKinovaDemo_Compliance::controlModeManager(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  if (ctl.posTorqueFlag != isTorqueControl_) {
+  if (ctl.circleButtonFlag != isTorqueControl_) {
     isTorqueControl_ = !isTorqueControl_;
     if (isTorqueControl_) {
       mc_rtc::log::info("[Compliance mode] Transition to torque control");
