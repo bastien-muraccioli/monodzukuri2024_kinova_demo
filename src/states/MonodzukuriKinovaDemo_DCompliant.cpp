@@ -29,15 +29,15 @@ void MonodzukuriKinovaDemo_DCompliant::start(
 
 
   // Set the shoulder task
-  // ctl.compShoulderTask->reset();
-  // ctl.compShoulderTask->positionTask->stiffness(0);
-  // ctl.compShoulderTask->positionTask->damping(0.0);
-  // ctl.compShoulderTask->positionTask->weight(0);
-  // ctl.compShoulderTask->orientationTask->stiffness(0);
-  // ctl.compShoulderTask->orientationTask->damping(0.0);
-  // ctl.compShoulderTask->orientationTask->weight(0);
-  // ctl.compShoulderTask->makeCompliant(true);
-  // ctl.solver().addTask(ctl.compShoulderTask);
+  ctl.compShoulderTask->reset();
+  ctl.compShoulderTask->positionTask->stiffness(0);
+  ctl.compShoulderTask->positionTask->damping(0.0);
+  ctl.compShoulderTask->positionTask->weight(0);
+  ctl.compShoulderTask->orientationTask->stiffness(0);
+  ctl.compShoulderTask->orientationTask->damping(0.0);
+  ctl.compShoulderTask->orientationTask->weight(0);
+  ctl.compShoulderTask->makeCompliant(true);
+  ctl.solver().addTask(ctl.compShoulderTask);
 
   // Set the end-effector task
   ctl.compEETask->reset();
@@ -98,9 +98,9 @@ bool MonodzukuriKinovaDemo_DCompliant::run(mc_control::fsm::Controller &ctl_) {
       ctl.compEETask->reset();
       ctl.compEETask->positionTask->refVel(Eigen::Vector3d(0, 0, 0));
       ctl.compEETask->orientationTask->refVel(Eigen::Vector3d(0, 0, 0));
-      // ctl.compShoulderTask->reset();
-      // ctl.compShoulderTask->positionTask->refVel(Eigen::Vector3d(0, 0, 0));
-      // ctl.compShoulderTask->orientationTask->refVel(Eigen::Vector3d(0, 0, 0));
+      ctl.compShoulderTask->reset();
+      ctl.compShoulderTask->positionTask->refVel(Eigen::Vector3d(0, 0, 0));
+      ctl.compShoulderTask->orientationTask->refVel(Eigen::Vector3d(0, 0, 0));
       transitionStarted_ = true;
     }
     if (transitionTime_ > transitionDuration_) {
@@ -192,9 +192,9 @@ void MonodzukuriKinovaDemo_DCompliant::dualComplianceControl(
     mc_control::fsm::Controller &ctl_) {
   // mc_rtc::log::info("[Null Space mode] DualCompliance Loop control");
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  ctl.compPostureTask->reset();
+  // ctl.compPostureTask->reset();
   ctl.compEETask->reset();
-  // ctl.compShoulderTask->reset();
+  ctl.compShoulderTask->reset();
 }
 
 void MonodzukuriKinovaDemo_DCompliant::addWayPoint(
@@ -203,28 +203,29 @@ void MonodzukuriKinovaDemo_DCompliant::addWayPoint(
   auto & robot = ctl.robot(ctl.robots()[0].name());
   auto & rjo = robot.refJointOrder();
 
-  std::map<std::string, std::vector<double>> currentPosture;
-  auto jointNames = robot.refJointOrder();
-  auto q = robot.mbc().q;
-  mc_rtc::log::info("jointNames: {}", jointNames[0]);
-  // Construct the current posture map
-  for (const auto &jointName : jointNames) {
-    if (robot.hasJoint(jointName)) {
-      mc_rtc::log::info("Adding joint {} with value {}", jointName, q[robot.jointIndexByName(jointName)][0]);
-      currentPosture[jointName] = {q[robot.jointIndexByName(jointName)][0]};
-    }
-  }
-  ctl.wayPoints.emplace_back(currentPosture);
-  // sva::PTransformd posEE = robot.bodyPosW(ctl.tool_frame);
-  // sva::PTransformd posShoulder = robot.bodyPosW(ctl.shoulder_frame);
+  // std::map<std::string, std::vector<double>> currentPosture;
+  // auto jointNames = robot.refJointOrder();
+  // auto q = robot.mbc().q;
+  // mc_rtc::log::info("jointNames: {}", jointNames[0]);
+  // // Construct the current posture map
+  // for (const auto &jointName : jointNames) {
+  //   if (robot.hasJoint(jointName)) {
+  //     mc_rtc::log::info("Adding joint {} with value {}", jointName, q[robot.jointIndexByName(jointName)][0]);
+  //     currentPosture[jointName] = {q[robot.jointIndexByName(jointName)][0]};
+  //   }
+  // }
+  // ctl.wayPoints.emplace_back(currentPosture);
+  
+  sva::PTransformd posEE = robot.bodyPosW(ctl.tool_frame);
+  sva::PTransformd posShoulder = robot.bodyPosW(ctl.shoulder_frame);
 
-  // ctl.wayPoints.emplace_back(posEE, posShoulder);
+  ctl.wayPoints.emplace_back(posEE, posShoulder);
 
-  // mc_rtc::log::info("Added waypoint:\n\tEE Position: {}, Orientation: {}\n\tShoulder Position: {}, Orientation: {}",
-  //                   posEE.translation().transpose(),
-  //                   posEE.rotation().transpose(),
-  //                   posShoulder.translation().transpose(),
-  //                   posShoulder.rotation().transpose());
+  mc_rtc::log::info("Added waypoint:\n\tEE Position: {}, Orientation: {}\n\tShoulder Position: {}, Orientation: {}",
+                    posEE.translation().transpose(),
+                    posEE.rotation().transpose(),
+                    posShoulder.translation().transpose(),
+                    posShoulder.rotation().transpose());
 }
 
 

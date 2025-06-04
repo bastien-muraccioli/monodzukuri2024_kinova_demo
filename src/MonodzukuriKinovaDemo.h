@@ -88,8 +88,8 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
   bool changeModeAvailable = true;
   bool changeModeRequest = false;
 
-//   std::vector<std::pair<sva::PTransformd, sva::PTransformd>> wayPoints; // Contains pairs of position/rotation of the end-effector and the shoulder
-    std::vector<std::map<std::string, std::vector<double>>> wayPoints;
+  std::vector<std::pair<sva::PTransformd, sva::PTransformd>> wayPoints; // Contains pairs of position/rotation of the end-effector and the shoulder
+    // std::vector<std::map<std::string, std::vector<double>>> wayPoints;
   int jointNumber;
 
   double dt_ctrl;
