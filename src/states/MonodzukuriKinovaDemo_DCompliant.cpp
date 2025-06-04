@@ -61,17 +61,17 @@ void MonodzukuriKinovaDemo_DCompliant::start(
   ctl.squareButtonFlag = false; // add a point
   ctl.circleButtonFlag = false; // Remove a point
 
-  ctl.gui()->addElement({"Controller"},
+  ctl.gui()->addElement(this, {"Controller"},
                         mc_rtc::gui::Label("Current force: ",
                                            [this]() { return currentForce_; }));
-  ctl.gui()->addElement({"Controller"},
+  ctl.gui()->addElement(this,{"Controller"},
                         mc_rtc::gui::NumberInput(
                             "Dual Compliance Wrench Max Threshold",
                             [this]() { return dualComplianceMaxThreshold_; },
                             [this](double threshold) {
                               dualComplianceMaxThreshold_ = threshold;
                             }));
-  ctl.gui()->addElement({"Controller"},
+  ctl.gui()->addElement(this,{"Controller"},
                         mc_rtc::gui::NumberInput(
                             "Dual Compliance Wrench Min Threshold",
                             [this]() { return dualComplianceMinThreshold_; },
@@ -133,6 +133,7 @@ bool MonodzukuriKinovaDemo_DCompliant::run(mc_control::fsm::Controller &ctl_) {
 void MonodzukuriKinovaDemo_DCompliant::teardown(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+  ctl.gui()->removeElements(this);
 }
 
 void MonodzukuriKinovaDemo_DCompliant::controlModeManager(
@@ -169,21 +170,23 @@ void MonodzukuriKinovaDemo_DCompliant::controlModeManager(
     ctl.compEETask->makeCompliant(false);
   }
 
-  if(ctl.circleButtonFlag && !removeWayPointFlag_){
+  if(ctl.circleButtonFlag != removeWayPointFlag_){
     // mc_rtc::log::info("Removing last waypoint");
-    removeWayPointFlag_ = true;
+    removeWayPointFlag_ = !removeWayPointFlag_;
+  }
+  if(removeWayPointFlag_ != removeWayPointFlagLast_){
     removeWayPoint(ctl);
+    removeWayPointFlagLast_ = removeWayPointFlag_;
   }
-  if(!ctl.circleButtonFlag && removeWayPointFlag_){
-    removeWayPointFlag_ = false;
-  }
-  if(ctl.squareButtonFlag && !addWayPointFlag_){
+
+  if(ctl.squareButtonFlag != addWayPointFlag_){
     // mc_rtc::log::info("Adding waypoint");
-    addWayPointFlag_ = true;
-    addWayPoint(ctl);
+    addWayPointFlag_ = !addWayPointFlag_;
   }
-  if(!ctl.squareButtonFlag && addWayPointFlag_){
-    addWayPointFlag_ = false;
+  if(addWayPointFlag_ != addWayPointFlagLast_)
+  {
+    addWayPoint(ctl);
+    addWayPointFlagLast_ = addWayPointFlag_;
   }
 
 }
@@ -197,34 +200,39 @@ void MonodzukuriKinovaDemo_DCompliant::dualComplianceControl(
   // ctl.compShoulderTask->reset();
 }
 
-void MonodzukuriKinovaDemo_DCompliant::addWayPoint(
-    mc_control::fsm::Controller &ctl_) {
+void MonodzukuriKinovaDemo_DCompliant::addWayPoint(mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  auto & robot = ctl.robot(ctl.robots()[0].name());
-  auto & rjo = robot.refJointOrder();
+  auto &robot = ctl.robot(ctl.robots()[0].name());
+  auto &rjo = robot.refJointOrder();
 
   std::map<std::string, std::vector<double>> currentPosture;
   auto jointNames = robot.refJointOrder();
-  auto q = robot.mbc().q;
-  mc_rtc::log::info("jointNames: {}", jointNames[0]);
-  // Construct the current posture map
-  for (const auto &jointName : jointNames) {
+  const auto &q_tricked = robot.mbc().q;
+  const auto &currentTarget = ctl.compPostureTask->posture();
+
+  std::vector<double> q_current_short(ctl.jointNumber);
+  std::vector<double> q_target_short(ctl.jointNumber);
+
+  for (size_t i = 0; i < ctl.jointNumber; ++i) {
+    const auto &jointName = rjo[i];
+    int idx = robot.jointIndexByName(jointName);
+    q_current_short[i] = q_tricked[idx][0];
+    q_target_short[i] = currentTarget[idx][0];
+  }
+
+  std::vector<double> correctedAngles = computeAngleOffsets(ctl.jointNumber, q_target_short, q_current_short);
+
+  for (size_t i = 0; i < ctl.jointNumber; ++i) {
+    const auto &jointName = rjo[i];
     if (robot.hasJoint(jointName)) {
-      mc_rtc::log::info("Adding joint {} with value {}", jointName, q[robot.jointIndexByName(jointName)][0]);
-      currentPosture[jointName] = {q[robot.jointIndexByName(jointName)][0]};
+      double q_corrected_short = q_current_short[i] - correctedAngles[i];
+      mc_rtc::log::info("Adding joint {} with value {}", jointName, q_corrected_short);
+      currentPosture[jointName] = {q_corrected_short};
     }
   }
-  
-  sva::PTransformd posEE = robot.bodyPosW(ctl.tool_frame);
-  // sva::PTransformd posShoulder = robot.bodyPosW(ctl.shoulder_frame);
-  ctl.wayPoints.emplace_back(currentPosture, posEE);
-  // ctl.wayPoints.emplace_back(posEE, posShoulder);
 
-  // mc_rtc::log::info("Added waypoint:\n\tEE Position: {}, Orientation: {}\n\tShoulder Position: {}, Orientation: {}",
-  //                   posEE.translation().transpose(),
-  //                   posEE.rotation().transpose(),
-  //                   posShoulder.translation().transpose(),
-  //                   posShoulder.rotation().transpose());
+  sva::PTransformd posEE = robot.bodyPosW(ctl.tool_frame);
+  ctl.wayPoints.emplace_back(currentPosture, posEE);
 }
 
 
@@ -237,6 +245,45 @@ void MonodzukuriKinovaDemo_DCompliant::removeWayPoint(
   } else {
     mc_rtc::log::warning("No waypoints to remove.");
   }
+}
+
+std::vector<double> MonodzukuriKinovaDemo_DCompliant::computeAngleOffsets(
+    size_t actuator_count,
+    const std::vector<double> &target_angles,
+    const std::vector<double> &current_angles)
+{
+  if (target_angles.size()  != actuator_count ||
+      current_angles.size() != actuator_count)
+  {
+    throw std::invalid_argument(
+      "computeAngleOffsets: size of angle arrays must equal actuator_count");
+  }
+
+  std::vector<double> offsets(actuator_count, 0.0);
+
+  for (size_t i = 0; i < actuator_count; ++i)
+  {
+    double tgt = target_angles[i];
+    double cur = current_angles[i];
+
+    // If current is > (target + π), subtract 2π to wrap it down.
+    if (cur > tgt + M_PI)
+    {
+      offsets[i] = -2.0 * M_PI;
+    }
+    // If current is < (target - π), add 2π to wrap it up.
+    else if (cur < tgt - M_PI)
+    {
+      offsets[i] = +2.0 * M_PI;
+    }
+    // Otherwise, no offset is needed (current is within ±π of target).
+    else
+    {
+      offsets[i] = 0.0;
+    }
+  }
+
+  return offsets;
 }
 
 EXPORT_SINGLE_STATE("MonodzukuriKinovaDemo_DCompliant",

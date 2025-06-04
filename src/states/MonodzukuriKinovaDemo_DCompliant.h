@@ -22,13 +22,21 @@ private:
   void dualComplianceControl(mc_control::fsm::Controller &ctl);
   void addWayPoint(mc_control::fsm::Controller &ctl);
   void removeWayPoint(mc_control::fsm::Controller &ctl);
+  static std::vector<double> computeAngleOffsets(
+    size_t actuator_count,
+    const std::vector<double> &target_angles,
+    const std::vector<double> &current_angles);
 
   bool changeModeRequest_ = false;
 
   bool nsComplianceStateFlag_ = false;
+  bool nsComplianceStateFlagLast_ = false;
   bool addWayPointFlag_ = false;
+  bool addWayPointFlagLast_ = false;
   bool removeWayPointFlag_ = false;
+  bool removeWayPointFlagLast_ = false;
   bool runWayPointFlag_ = false;
+  bool runWayPointFlagLast_ = false;
 
   bool dualComplianceLoopFlag_ = false;
   double dualComplianceMaxThreshold_ = 9.0;

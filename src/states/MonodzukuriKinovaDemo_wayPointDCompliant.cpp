@@ -22,10 +22,10 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::start(
   // ctl.compPostureTask->stiffness(30);
   // ctl.compPostureTask->damping(30.0);
   ctl.compPostureTask->stiffness(50.0);
-  ctl.compPostureTask->damping(20.0);
+  ctl.compPostureTask->damping(50.0);
   ctl.compPostureTask->weight(1000);
   ctl.compPostureTask->makeCompliant(true);
-  // ctl.solver().removeTask(ctl.compEETask);
+  
   ctl.compEETask->reset();
   ctl.compEETask->positionTask->stiffness(50.0);
   ctl.compEETask->positionTask->damping(20.0);
@@ -34,6 +34,7 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::start(
   ctl.compEETask->orientationTask->damping(20.0);
   ctl.compEETask->orientationTask->weight(10000);
   ctl.compEETask->makeCompliant(false);
+  ctl.solver().removeTask(ctl.compEETask);
 
   // Set the first waypoint as target
   if (!ctl.wayPoints.empty()) {
@@ -74,7 +75,7 @@ bool MonodzukuriKinovaDemo_wayPointDCompliant::run(mc_control::fsm::Controller &
     {
       // ctl.compShoulderTask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
       ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
-      ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
+      // ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
       wayPointIndex_++;
     }
     else
