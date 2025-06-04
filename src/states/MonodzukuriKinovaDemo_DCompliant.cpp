@@ -214,10 +214,10 @@ void MonodzukuriKinovaDemo_DCompliant::addWayPoint(
       currentPosture[jointName] = {q[robot.jointIndexByName(jointName)][0]};
     }
   }
-  ctl.wayPoints.emplace_back(currentPosture);
-  // sva::PTransformd posEE = robot.bodyPosW(ctl.tool_frame);
+  
+  sva::PTransformd posEE = robot.bodyPosW(ctl.tool_frame);
   // sva::PTransformd posShoulder = robot.bodyPosW(ctl.shoulder_frame);
-
+  ctl.wayPoints.emplace_back(currentPosture, posEE);
   // ctl.wayPoints.emplace_back(posEE, posShoulder);
 
   // mc_rtc::log::info("Added waypoint:\n\tEE Position: {}, Orientation: {}\n\tShoulder Position: {}, Orientation: {}",

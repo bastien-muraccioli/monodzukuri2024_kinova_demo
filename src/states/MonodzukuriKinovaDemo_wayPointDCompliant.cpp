@@ -21,23 +21,24 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::start(
   ctl.compPostureTask->reset();
   // ctl.compPostureTask->stiffness(30);
   // ctl.compPostureTask->damping(30.0);
-  ctl.compPostureTask->stiffness(10);
-  // ctl.compPostureTask->damping(10);
-  ctl.compPostureTask->weight(10000);
+  ctl.compPostureTask->stiffness(50.0);
+  ctl.compPostureTask->damping(20.0);
+  ctl.compPostureTask->weight(1000);
   ctl.compPostureTask->makeCompliant(true);
+  // ctl.solver().removeTask(ctl.compEETask);
   ctl.compEETask->reset();
-  ctl.compEETask->positionTask->stiffness(0);
-  // ctl.compEETask->positionTask->damping(30.0);
-  ctl.compEETask->positionTask->weight(0);
-  ctl.compEETask->orientationTask->stiffness(0);
-  // ctl.compEETask->orientationTask->damping(30.0);
-  ctl.compEETask->orientationTask->weight(0);
-  // ctl.compEETask->makeCompliant(true);
+  ctl.compEETask->positionTask->stiffness(50.0);
+  ctl.compEETask->positionTask->damping(20.0);
+  ctl.compEETask->positionTask->weight(10000);
+  ctl.compEETask->orientationTask->stiffness(50.0);
+  ctl.compEETask->orientationTask->damping(20.0);
+  ctl.compEETask->orientationTask->weight(10000);
+  ctl.compEETask->makeCompliant(false);
 
   // Set the first waypoint as target
   if (!ctl.wayPoints.empty()) {
-      ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_]);
-    // ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_]);
+    ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
+    ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
     // ctl.compShoulderTask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
     wayPointIndex_++;
   } else {
@@ -58,9 +59,12 @@ bool MonodzukuriKinovaDemo_wayPointDCompliant::run(mc_control::fsm::Controller &
       mc_rtc::log::info("Current Distance to target: {}",
                       ctl.compPostureTask->eval().norm());
 
+      mc_rtc::log::info("Current Distance to end-effector target: {}",
+                      ctl.compEETask->eval().norm());
+
   // if the target was reached, move to the next waypoint
   // if(ctl.compEETask->eval().norm() < 0.01 && ctl.compShoulderTask->eval().norm() < 0.01)
-  if(ctl.compPostureTask->eval().norm() < 0.1)
+  if(ctl.compEETask->eval().norm() < 0.1 && ctl.compPostureTask->eval().norm() < 0.1)
   {
     mc_rtc::log::info("Reached waypoint {} of {}", wayPointIndex_, ctl.wayPoints.size());
 
@@ -68,10 +72,9 @@ bool MonodzukuriKinovaDemo_wayPointDCompliant::run(mc_control::fsm::Controller &
     //                   ctl.compShoulderTask->eval().norm());
     if(wayPointIndex_ < ctl.wayPoints.size())
     {
-      // ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].first);
       // ctl.compShoulderTask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
-      ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_]);
-      // ctl.compPostureTask->refVel(Eigen::VectorXd::Ones(ctl.wayPoints[wayPointIndex_].size()) * 0.1);
+      ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
+      ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
       wayPointIndex_++;
     }
     else
@@ -94,6 +97,8 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::teardown(
   ctl.compEETask->positionTask->weight(10000);
   ctl.compEETask->orientationTask->stiffness(400);
   ctl.compEETask->orientationTask->weight(10000);
+  ctl.compPostureTask->stiffness(0.0);
+  ctl.compPostureTask->damping(2.0);
   ctl.compPostureTask->weight(1);
   ctl.wayPoints.clear();
 }
