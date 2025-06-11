@@ -91,6 +91,7 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
   int jointNumber;
 
   double dt_ctrl;
+  bool kinestheticTeachingHasBeenPlayed_ = false; // Flag to check if the kinesthetic teaching has been played
 
 private:
   mc_rtc::Configuration config_;

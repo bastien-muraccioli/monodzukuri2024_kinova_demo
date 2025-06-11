@@ -14,7 +14,18 @@ struct MonodzukuriKinovaDemo_wayPointDCompliant : mc_control::fsm::State {
 
   void teardown(mc_control::fsm::Controller &ctl) override;
 
+  void addGui(mc_control::fsm::Controller &ctl);
+
 private:
   int wayPointIndex_ = 0;
+  double stiffness_;
+  double damping_;
+  double stiffnessMin_ = 10.0;
+  double stiffnessMax_ = 150.0;
+  // Parameters for stiffness adjustment
+  // stiffness = A* exp(k_slope_ * distance) + C
+  double k_slope_ = -2; // Slope for stiffness adjustment (Strictly negative for decreasing stiffness)
+  double A_;
+  double C_;
 
 };

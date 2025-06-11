@@ -188,6 +188,11 @@ void MonodzukuriKinovaDemo_DCompliant::addWayPoint(mc_control::fsm::Controller &
   auto &robot = ctl.robot(ctl.robots()[0].name());
   auto &rjo = robot.refJointOrder();
 
+  if(ctl.kinestheticTeachingHasBeenPlayed_){
+    ctl.wayPoints.clear();
+    ctl.kinestheticTeachingHasBeenPlayed_ = false;
+  }
+
   std::map<std::string, std::vector<double>> currentPosture;
   auto jointNames = robot.refJointOrder();
   const auto &q_tricked = robot.mbc().q;
