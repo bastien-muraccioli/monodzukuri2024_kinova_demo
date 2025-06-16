@@ -154,6 +154,7 @@ void MonodzukuriKinovaDemo_MinJerk::teardown(
   ctl.game.setRobotRadius(ctl.robot_radius);
   ctl.solver().removeTask(mj_task);
   ctl.solver().removeTask(oriTask_);
+  ctl.solver().removeTask(posTask_);
   ctl.solver().removeTask(ctl.compEETask);
 }
 
