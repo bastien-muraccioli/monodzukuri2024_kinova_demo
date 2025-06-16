@@ -18,15 +18,19 @@ struct MonodzukuriKinovaDemo_wayPointDCompliant : mc_control::fsm::State {
 
 private:
   int wayPointIndex_ = 0;
-  double stiffness_;
-  double damping_;
+  double stiffness_posture_;
+  double damping_posture_;
+  double stiffness_task_;
+  double damping_task_;
   double stiffnessMin_ = 10.0;
   double stiffnessMax_ = 150.0;
+  // double stiffnessMin_ = 5.0;
+  // double stiffnessMax_ = 75.0;
   // Parameters for stiffness adjustment
   // stiffness = A* exp(k_slope_ * distance) + C
   double k_slope_ = -2; // Slope for stiffness adjustment (Strictly negative for decreasing stiffness)
   double A_;
   double C_;
 
-  bool eeTaskHasReachedTarget_ = false;
+  // bool eeTaskHasReachedTarget_ = false;
 };

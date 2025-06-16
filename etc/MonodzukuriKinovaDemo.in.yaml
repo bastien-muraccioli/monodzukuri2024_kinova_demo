@@ -66,7 +66,7 @@ transitions:
 # Initial state
 init: MonodzukuriKinovaDemo_Initial
 
-Plugins: [ PassivityTorqueFeedback, ExternalForcesEstimator, mc_joystick_plugin ]
+Plugins: [ ExternalForcesEstimator, mc_joystick_plugin ]
 
 ObserverPipelines:
 - name: Pipeline
