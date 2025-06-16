@@ -10,7 +10,7 @@ void MonodzukuriKinovaDemo_DCompliant::start(
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
   
   // Update the UI
-  ctl.game.setControlMode(4);
+  ctl.game.setControlMode(1);
 
   // Enable torque control and feedback from external forces estimator
     ctl.datastore().assign<std::string>("ControlMode", "Torque");

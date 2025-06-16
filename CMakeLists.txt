@@ -7,6 +7,10 @@ set(PROJECT_NAME MonodzukuriKinovaDemo)
 set(PROJECT_DESCRIPTION "MonodzukuriKinovaDemo")
 set(PROJECT_URL "")
 
+add_compile_definitions(
+  PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 project(
   ${PROJECT_NAME}
   LANGUAGES CXX

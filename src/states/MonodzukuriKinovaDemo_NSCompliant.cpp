@@ -8,9 +8,6 @@ void MonodzukuriKinovaDemo_NSCompliant::configure(
 void MonodzukuriKinovaDemo_NSCompliant::start(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  
-  // Update the UI
-  ctl.game.setControlMode(1);
 
   // Disable feedback from external forces estimator (safer)
   if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
@@ -38,7 +35,8 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   ctl.triangleButtonFlag = true; // true: nullspace compliant, false: not compliant
   ctl.squareButtonFlag = false; // true: end-effector compliant, false: not compliant
   ctl.circleButtonFlag = false; // false: position control, true: torque control
-
+  
+  // Update the UI
   ctl.game.setControlMode(4);
   ctl.wayPoints.clear();
   ctl.kinestheticTeachingHasBeenPlayed_ = false;

@@ -11,7 +11,8 @@
 // Constructor
 FittsGame::FittsGame()
     : win_size(1920, 1080), win_fitts_size(570, 570), pointer_radius(3.0f),
-      wait_time(1.0f), target_idx(-1) {}
+      wait_time(1.0f), target_idx(-1) {std::setlocale(LC_ALL, "C.UTF-8");
+}
 
 // Run the game loop
 void FittsGame::run() {
@@ -517,30 +518,21 @@ void FittsGame::renderTargetIdx(float x, float y, int idx) {
   renderText(x, y, ss.str(), GLUT_BITMAP_HELVETICA_18);
 }
 
-std::string FittsGame::getPath(const std::string &filename, bool english) {
-  // Get the directory of the current source file
-  std::filesystem::path source_file = __FILE__;
-  std::filesystem::path source_dir =
-      source_file.parent_path(); // Get the source directory
-
-  std::filesystem::path font_path;
-
-  // Construct the font path relative to the source directory
-  if (english) {
-    font_path = source_dir / "assets-en" / filename;
-  }
-  else {
-    font_path = source_dir / "assets-jp" / filename;
-  }
-
-  return font_path.string();
+std::string FittsGame::getPath(const std::string &filename, bool english)
+{
+  std::filesystem::path source_root = PROJECT_SOURCE_DIR;
+  std::filesystem::path asset_dir = source_root / "src" / (english ? "assets-en" : "assets-jp");
+  mc_rtc::log::info("Loading asset from: {}", (asset_dir / filename).string());
+  return (asset_dir / filename).string();
 }
+
+
 
 GLuint FittsGame::loadTexture(const char *filename) {
   int width, height, channels;
   unsigned char *image = stbi_load(filename, &width, &height, &channels, 0);
   if (!image) {
-    mc_rtc::log::error("Failed to load image");
+    mc_rtc::log::error("Failed to load image: {}", stbi_failure_reason());
     return 0;
   }
 
@@ -561,6 +553,11 @@ GLuint FittsGame::loadTexture(const char *filename) {
   glGenerateMipmap(GL_TEXTURE_2D);
 
   stbi_image_free(image);
+
+  GLenum err = glGetError();
+  if (err != GL_NO_ERROR) {
+    mc_rtc::log::error("OpenGL error after texture upload: 0x{:X}", err);
+  }
   return textureID;
 }
 
