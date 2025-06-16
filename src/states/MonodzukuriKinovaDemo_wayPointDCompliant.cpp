@@ -17,25 +17,25 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::start(
   // ctl.compPostureTask->damping(30.0);
   stiffness_ = stiffnessMin_;
   damping_ = 3*std::sqrt(stiffness_);
-  ctl.compPostureTask->stiffness(stiffness_);
-  ctl.compPostureTask->damping(damping_);
+  ctl.compPostureTask->stiffness(0.0);
+  ctl.compPostureTask->damping(0.0);
   ctl.compPostureTask->weight(1000);
   ctl.compPostureTask->makeCompliant(true);
   
   ctl.compEETask->reset();
-  ctl.compEETask->positionTask->stiffness(50.0);
-  ctl.compEETask->positionTask->damping(20.0);
+  ctl.compEETask->positionTask->stiffness(stiffness_);
+  ctl.compEETask->positionTask->damping(damping_);
   ctl.compEETask->positionTask->weight(10000);
-  ctl.compEETask->orientationTask->stiffness(50.0);
-  ctl.compEETask->orientationTask->damping(20.0);
+  ctl.compEETask->orientationTask->stiffness(stiffness_);
+  ctl.compEETask->orientationTask->damping(damping_);
   ctl.compEETask->orientationTask->weight(10000);
-  ctl.compEETask->makeCompliant(false);
-  ctl.solver().removeTask(ctl.compEETask);
+  ctl.compEETask->makeCompliant(true);
+  // ctl.solver().removeTask(ctl.compEETask);
 
   // Set the first waypoint as target
   if (!ctl.wayPoints.empty()) {
-    ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
-    // ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
+    // ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
+    ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
     wayPointIndex_++;
   } else {
     mc_rtc::log::warning("No waypoints set, please add waypoints before running the controller.");
@@ -56,50 +56,92 @@ bool MonodzukuriKinovaDemo_wayPointDCompliant::run(mc_control::fsm::Controller &
     return true;
   }
 
-  // mc_rtc::log::info("Current Distance to end-effector target: {}",
-  //                     ctl.compEETask->eval().norm());
-
-  mc_rtc::log::info("Current Distance to posture target: {}",
+  if(eeTaskHasReachedTarget_)
+  {
+    mc_rtc::log::info("Current Distance to posture target: {}",
                       ctl.compPostureTask->eval().norm());
+    if(ctl.compPostureTask->eval().norm() < 1.0)
+    {
+      
+      stiffness_ = A_ * exp(k_slope_ * ctl.compPostureTask->eval().norm()) + C_; // Exponential
+      mc_rtc::log::info("Stiffness adjusted to: {}", stiffness_);
+      damping_ = 3*std::sqrt(stiffness_);
+      ctl.compPostureTask->stiffness(stiffness_);
+      ctl.compPostureTask->damping(damping_);
+    }
+    if(ctl.compPostureTask->eval().norm() < 0.1)
+    {
+      mc_rtc::log::info("Reached waypoint {} of {}", wayPointIndex_, ctl.wayPoints.size());
+
+      if(wayPointIndex_ < ctl.wayPoints.size())
+      {
+        stiffness_ = stiffnessMin_;
+        damping_ = 3*std::sqrt(stiffness_);
+
+        ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
+        ctl.compEETask->positionTask->stiffness(stiffness_);
+        ctl.compEETask->orientationTask->stiffness(stiffness_);
+        ctl.compEETask->positionTask->damping(damping_);
+        ctl.compEETask->orientationTask->damping(damping_);
+        ctl.solver().addTask(ctl.compEETask);
+
+        ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
+        ctl.compPostureTask->stiffness(0.0);
+        ctl.compPostureTask->damping(0.0);
+        eeTaskHasReachedTarget_ = false;
+        wayPointIndex_++;
+      }
+      else
+      {
+        ctl.kinestheticTeachingHasBeenPlayed_ = true;
+        mc_rtc::log::info("All waypoints reached.");
+        output("OK");
+        return true;
+      }
+    }
+  }
+  else
+  {
+    mc_rtc::log::info("Current Distance to end-effector target: {}",
+                      ctl.compEETask->eval().norm());
+    
+    if(ctl.compEETask->eval().norm() < 1.0)
+    {
+      stiffness_ = A_ * exp(k_slope_ * ctl.compEETask->eval().norm()) + C_; // Exponential
+      mc_rtc::log::info("Stiffness adjusted to: {}", stiffness_);
+      damping_ = 3*std::sqrt(stiffness_);
+      ctl.compEETask->positionTask->stiffness(stiffness_);
+      ctl.compEETask->orientationTask->stiffness(stiffness_);
+      ctl.compEETask->positionTask->damping(damping_);
+      ctl.compEETask->orientationTask->damping(damping_);
+    }
+    if(ctl.compEETask->eval().norm() < 0.1)
+    {
+      mc_rtc::log::info("Reached end-effector target for waypoint {} of {}", wayPointIndex_, ctl.wayPoints.size());
+      eeTaskHasReachedTarget_ = true;
+
+      stiffness_ = stiffnessMin_;
+      damping_ = 3*std::sqrt(stiffness_);
+
+      // ctl.solver().addTask(ctl.compEETask);
+      // ctl.compEETask->makeCompliant(true);
+      ctl.compEETask->positionTask->stiffness(stiffness_);
+      ctl.compEETask->orientationTask->stiffness(damping_);
+      ctl.solver().removeTask(ctl.compEETask);
+      ctl.compPostureTask->stiffness(stiffness_);
+      ctl.compPostureTask->damping(damping_);
+    }
+  }
+
+  
+
+  
 
 
   // if the target was reached, move to the next waypoint
   // if(ctl.compEETask->eval().norm() < 0.1 && ctl.compPostureTask->eval().norm() < 0.1)
 
-  if(ctl.compPostureTask->eval().norm() < 1.0)
-  {
-    // The stiffness increases from eval less than 1.0 to 0.1 and stiffness_ from 50.0 to 100.0
-    // stiffness_ = 50.0 + (1-ctl.compPostureTask->eval().norm()) * 50.0; // Linear
-    stiffness_ = A_ * exp(k_slope_ * ctl.compPostureTask->eval().norm()) + C_; // Exponential
-    mc_rtc::log::info("Stiffness adjusted to: {}", stiffness_);
-    ctl.compPostureTask->stiffness(stiffness_);
-    damping_ = 3*std::sqrt(stiffness_);
-    ctl.compPostureTask->damping(damping_);
-  }
-
-  if(ctl.compPostureTask->eval().norm() < 0.1)
-  {
-    mc_rtc::log::info("Reached waypoint {} of {}", wayPointIndex_, ctl.wayPoints.size());
-
-    
-    if(wayPointIndex_ < ctl.wayPoints.size())
-    {
-      ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
-      stiffness_ = stiffnessMin_;
-      ctl.compPostureTask->stiffness(stiffness_);
-      damping_ = 3*std::sqrt(stiffness_);
-      ctl.compPostureTask->damping(damping_);
-      // ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
-      wayPointIndex_++;
-    }
-    else
-    {
-      ctl.kinestheticTeachingHasBeenPlayed_ = true;
-      mc_rtc::log::info("All waypoints reached.");
-      output("OK");
-      return true;
-    }
-  }
+  
 
   return false;
 }

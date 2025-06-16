@@ -28,4 +28,5 @@ private:
   double A_;
   double C_;
 
+  bool eeTaskHasReachedTarget_ = false;
 };

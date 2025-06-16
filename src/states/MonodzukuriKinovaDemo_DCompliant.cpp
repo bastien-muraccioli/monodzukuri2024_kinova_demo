@@ -1,7 +1,6 @@
 #include "MonodzukuriKinovaDemo_DCompliant.h"
 #include "../MonodzukuriKinovaDemo.h"
 #include <mc_rtc/gui/Label.h>
-#include <mc_rtc/gui/Point3D.h>
 
 void MonodzukuriKinovaDemo_DCompliant::configure(
     const mc_rtc::Configuration &config) {}
@@ -189,6 +188,8 @@ void MonodzukuriKinovaDemo_DCompliant::addWayPoint(mc_control::fsm::Controller &
   auto &rjo = robot.refJointOrder();
 
   if(ctl.kinestheticTeachingHasBeenPlayed_){
+    for (size_t i = 0; i < ctl.wayPoints.size(); ++i) {
+    }
     ctl.wayPoints.clear();
     ctl.kinestheticTeachingHasBeenPlayed_ = false;
   }
@@ -214,12 +215,20 @@ void MonodzukuriKinovaDemo_DCompliant::addWayPoint(mc_control::fsm::Controller &
     const auto &jointName = rjo[i];
     if (robot.hasJoint(jointName)) {
       double q_corrected_short = q_current_short[i] - correctedAngles[i];
+      // Ensure that q_corrected_short is between -M_PI and M_PI no matter how many times it wraps around
+      while (q_corrected_short > M_PI) {
+        q_corrected_short -= 2 * M_PI;
+      }
+      while (q_corrected_short < -M_PI) {
+        q_corrected_short += 2 * M_PI;
+      }
       mc_rtc::log::info("Adding joint {} with value {}", jointName, q_corrected_short);
       currentPosture[jointName] = {q_corrected_short};
     }
   }
 
   sva::PTransformd posEE = robot.bodyPosW(ctl.tool_frame);
+  // mc_rtc::log::info("Adding waypoint with current posture: {}", currentPosture);
   ctl.wayPoints.emplace_back(currentPosture, posEE);
 }
 

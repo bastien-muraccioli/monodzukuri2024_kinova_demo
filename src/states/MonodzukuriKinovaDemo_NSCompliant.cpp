@@ -40,6 +40,8 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   ctl.circleButtonFlag = false; // false: position control, true: torque control
 
   ctl.game.setControlMode(4);
+  ctl.wayPoints.clear();
+  ctl.kinestheticTeachingHasBeenPlayed_ = false;
   
   // Add GUI and log
   tool_frame = ctl.tool_frame;
