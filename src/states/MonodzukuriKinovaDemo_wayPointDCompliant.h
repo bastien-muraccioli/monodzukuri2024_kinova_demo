@@ -24,6 +24,11 @@ private:
   double damping_task_;
   double stiffnessMin_ = 10.0;
   double stiffnessMax_ = 150.0;
+  bool taskEEInSolver_ = false;
+  bool dualComplianceFlag_ = false;
+  bool timeOut_ = false;
+  double counter_ = 0.0;
+  double maxTime_ = 0.6; 
   // double stiffnessMin_ = 5.0;
   // double stiffnessMax_ = 75.0;
   // Parameters for stiffness adjustment

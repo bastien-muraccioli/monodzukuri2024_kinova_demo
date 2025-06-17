@@ -15,8 +15,8 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::start(
   ctl.compPostureTask->reset();
   stiffness_posture_ = stiffnessMin_;
   damping_posture_ = 3*std::sqrt(stiffness_posture_);
-  stiffness_task_ = stiffnessMin_;
-  damping_task_ = 3*std::sqrt(stiffness_task_);
+  stiffness_task_ = stiffnessMin_/2;
+  damping_task_ = 4*std::sqrt(stiffness_task_);
   ctl.compPostureTask->stiffness(stiffness_posture_);
   ctl.compPostureTask->damping(damping_posture_);
   ctl.compPostureTask->weight(1000);
@@ -30,7 +30,8 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::start(
   ctl.compEETask->orientationTask->damping(damping_task_);
   ctl.compEETask->orientationTask->weight(100);
   ctl.compEETask->makeCompliant(true);
-  ctl.solver().removeTask(ctl.compEETask);
+  taskEEInSolver_ = true;
+  // ctl.solver().removeTask(ctl.compEETask);
 
   // Set the first waypoint as target
   if (!ctl.wayPoints.empty()) {
@@ -38,7 +39,7 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::start(
     ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
     wayPointIndex_++;
   } else {
-    mc_rtc::log::warning("No waypoints set, please add waypoints before running the controller.");
+    mc_rtc::log::warning("[MonodzukuriKinovaDemo] No waypoints set, please add waypoints before running the controller.");
   }
 
   // Compute A and C for stiffness adjustment
@@ -50,69 +51,97 @@ void MonodzukuriKinovaDemo_wayPointDCompliant::start(
 bool MonodzukuriKinovaDemo_wayPointDCompliant::run(mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  // Check if ctl.wayPoints is empty
-  if (ctl.wayPoints.empty()) {
+  // Check if ctl.wayPoints is empty or x button is pressed
+  if (ctl.wayPoints.empty() || ctl.crossButtonFlag) {
     output("OK");
     return true;
   }
 
-    mc_rtc::log::info("Current Distance to posture target: {}",
-                      ctl.compPostureTask->eval().norm());
-    mc_rtc::log::info("Current Distance to end-effector target: {}",
-                      ctl.compEETask->eval().norm());
+  // diff_eval_posture_ = ctl.compPostureTask->speed().norm();
+  // mc_rtc::log::info("Difference in posture evaluation: {}", diff_eval_posture_);
 
-    if(ctl.compPostureTask->eval().norm() < 1.0)
-    {
-      stiffness_posture_ = A_ * exp(k_slope_ * ctl.compPostureTask->eval().norm()) + C_; // Exponential
-      mc_rtc::log::info("Stiffness posture adjusted to: {}", stiffness_posture_);
-      damping_posture_ = 3*std::sqrt(stiffness_posture_);
-      ctl.compPostureTask->stiffness(stiffness_posture_);
-      ctl.compPostureTask->damping(damping_posture_);
+  mc_rtc::log::info("[MonodzukuriKinovaDemo] Current Distance to posture target: {}",
+                    ctl.compPostureTask->eval().norm());
+  mc_rtc::log::info("[MonodzukuriKinovaDemo] Current Posture Speed: {}",
+                    ctl.compPostureTask->speed().norm());
+  mc_rtc::log::info("[MonodzukuriKinovaDemo] Current Distance to end-effector target: {}",
+                    ctl.compEETask->eval().norm());
+
+  // Run a counter to check if the posture task is not moving
+  if(ctl.compPostureTask->speed().norm() < 0.01 && !timeOut_)
+  {
+    counter_ += ctl.timeStep;
+    if (counter_ > maxTime_) {
+      mc_rtc::log::warning("[MonodzukuriKinovaDemo] Posture task has not moved for {} seconds.",
+                           maxTime_);
+      timeOut_ = true;
+      if(taskEEInSolver_)
+      {
+        mc_rtc::log::info("[MonodzukuriKinovaDemo] Removing end-effector task from solver");
+        ctl.solver().removeTask(ctl.compEETask);
+        taskEEInSolver_ = false;
+      }
     }
+  }
 
-    if(ctl.compEETask->eval().norm() < 1.0)
+  if(ctl.compPostureTask->eval().norm() < 1.0)
+  {
+    stiffness_posture_ = A_ * exp(k_slope_ * ctl.compPostureTask->eval().norm()) + C_; // Exponential
+    mc_rtc::log::info("[MonodzukuriKinovaDemo] Stiffness posture adjusted to: {}", stiffness_posture_);
+    damping_posture_ = 3*std::sqrt(stiffness_posture_);
+    ctl.compPostureTask->stiffness(stiffness_posture_);
+    ctl.compPostureTask->damping(damping_posture_);
+  }
+
+  if(ctl.compEETask->eval().norm() < 1.0)
+  {
+    stiffness_task_ = (A_ * exp(k_slope_ * ctl.compEETask->eval().norm()) + C_)/2; // Exponential
+    mc_rtc::log::info("[MonodzukuriKinovaDemo] Stiffness task adjusted to: {}", stiffness_task_);
+    damping_task_ = 4*std::sqrt(stiffness_task_);
+    ctl.compEETask->positionTask->stiffness(stiffness_task_);
+    ctl.compEETask->orientationTask->stiffness(stiffness_task_);
+    ctl.compEETask->positionTask->damping(damping_task_);
+    ctl.compEETask->orientationTask->damping(damping_task_);
+  }
+
+  // if(ctl.compEETask->eval().norm() < 0.1 && ctl.compPostureTask->eval().norm() < 0.25)
+  if(ctl.compPostureTask->eval().norm() < 0.2)
+  {
+    mc_rtc::log::info("[MonodzukuriKinovaDemo] Reached waypoint {} of {}", wayPointIndex_, ctl.wayPoints.size());
+    if(!taskEEInSolver_) {
+      mc_rtc::log::info("[MonodzukuriKinovaDemo] Adding end-effector task to solver");
+      ctl.solver().addTask(ctl.compEETask);
+      taskEEInSolver_ = true;
+    }
+    timeOut_ = false;
+    counter_ = 0.0;
+
+    if(wayPointIndex_ < ctl.wayPoints.size())
     {
-      stiffness_task_ = A_ * exp(k_slope_ * ctl.compEETask->eval().norm()) + C_; // Exponential
-      mc_rtc::log::info("Stiffness task adjusted to: {}", stiffness_task_);
-      damping_task_ = 3*std::sqrt(stiffness_task_);
+      stiffness_posture_ = stiffnessMin_;
+      damping_posture_ = 3*std::sqrt(stiffness_posture_);
+      stiffness_task_ = stiffnessMin_/2; // Reduce stiffness for end-effector task
+      damping_task_ = 4*std::sqrt(stiffness_task_);
+
+      ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
       ctl.compEETask->positionTask->stiffness(stiffness_task_);
       ctl.compEETask->orientationTask->stiffness(stiffness_task_);
       ctl.compEETask->positionTask->damping(damping_task_);
       ctl.compEETask->orientationTask->damping(damping_task_);
+
+      ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
+      ctl.compPostureTask->stiffness(stiffness_posture_);
+      ctl.compPostureTask->damping(damping_posture_);
+      wayPointIndex_++;
     }
-    
-    // if(ctl.compEETask->eval().norm() < 0.1 && ctl.compPostureTask->eval().norm() < 0.25)
-    if(ctl.compPostureTask->eval().norm() < 0.1)
+    else
     {
-      mc_rtc::log::info("Reached waypoint {} of {}", wayPointIndex_, ctl.wayPoints.size());
-
-      if(wayPointIndex_ < ctl.wayPoints.size())
-      {
-        stiffness_posture_ = stiffnessMin_;
-        damping_posture_ = 3*std::sqrt(stiffness_posture_);
-        stiffness_task_ = stiffnessMin_; // Reduce stiffness for end-effector task
-        damping_task_ = 3*std::sqrt(stiffness_task_);
-
-        ctl.compEETask->set_ef_pose(ctl.wayPoints[wayPointIndex_].second);
-        ctl.compEETask->positionTask->stiffness(stiffness_task_);
-        ctl.compEETask->orientationTask->stiffness(stiffness_task_);
-        ctl.compEETask->positionTask->damping(damping_task_);
-        ctl.compEETask->orientationTask->damping(damping_task_);
-        // ctl.solver().addTask(ctl.compEETask);
-
-        ctl.compPostureTask->target(ctl.wayPoints[wayPointIndex_].first);
-        ctl.compPostureTask->stiffness(stiffness_posture_);
-        ctl.compPostureTask->damping(damping_posture_);
-        wayPointIndex_++;
-      }
-      else
-      {
-        ctl.kinestheticTeachingHasBeenPlayed_ = true;
-        mc_rtc::log::info("All waypoints reached.");
-        output("OK");
-        return true;
-      }
+      ctl.kinestheticTeachingHasBeenPlayed_ = true;
+      mc_rtc::log::info("[MonodzukuriKinovaDemo] All waypoints reached.");
+      output("OK");
+      return true;
     }
+  }
 
   // if the target was reached, move to the next waypoint
   // if(ctl.compEETask->eval().norm() < 0.1 && ctl.compPostureTask->eval().norm() < 0.1)
