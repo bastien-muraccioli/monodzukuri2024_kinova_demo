@@ -29,25 +29,30 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
   ctl.compPostureTask->makeCompliant(false);
   ctl.solver().removeTask(ctl.compEETask);
   ctl.datastore().assign<std::string>("ControlMode", "Position");
-  
+
+  ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
-  ctl.crossButtonFlag = false; // true: activate Dual compliance mode, false: deactivate
-  ctl.triangleButtonFlag = true; // true: nullspace compliant, false: not compliant
-  ctl.squareButtonFlag = false; // true: end-effector compliant, false: not compliant
+  ctl.crossButtonFlag =
+      false; // true: activate Dual compliance mode, false: deactivate
+  ctl.triangleButtonFlag =
+      true; // true: nullspace compliant, false: not compliant
+  ctl.squareButtonFlag =
+      false; // true: end-effector compliant, false: not compliant
   ctl.circleButtonFlag = false; // false: position control, true: torque control
-  
+
   // Update the UI
   ctl.game.setControlMode(4);
   ctl.wayPoints.clear();
   ctl.kinestheticTeachingHasBeenPlayed_ = false;
-  
+
   // Add GUI and log
   tool_frame = ctl.tool_frame;
   compEETask = ctl.compEETask;
   addGui(ctl);
   addLog(ctl);
 
-  mc_rtc::log::success("[MonodzukuriKinovaDemo] Null Space Compliant mode initialized");
+  mc_rtc::log::success(
+      "[MonodzukuriKinovaDemo] Null Space Compliant mode initialized");
 }
 
 bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller &ctl_) {
@@ -72,12 +77,12 @@ bool MonodzukuriKinovaDemo_NSCompliant::run(mc_control::fsm::Controller &ctl_) {
     }
   }
 
-     // Transition to dual compliance state
-    if (ctl.crossButtonFlag) {
-      // dualComplianceLoop(ctl);
-      output("DC");
-      return true;
-    }
+  // Transition to dual compliance state
+  if (ctl.crossButtonFlag) {
+    // dualComplianceLoop(ctl);
+    output("DC");
+    return true;
+  }
 
   // Initial state
   if (ctl.compPostureTask->eval().norm() < 0.05 && !start_moving_ &&
@@ -116,15 +121,15 @@ void MonodzukuriKinovaDemo_NSCompliant::teardown(
 void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
-  
+
   // Transition to position control if requested
   if (ctl.circleButtonFlag && !isPositionControl_) {
     mc_rtc::log::info("[Null Space mode] Position control");
     isPositionControl_ = true;
     changeToPosCtlRequest_ = true;
     ctl.compPostureTask->setGains(10.0, 20.0);
-  } 
-  
+  }
+
   // Transition to torque control if requested <=> set Null Space control
   else if (!ctl.circleButtonFlag && isPositionControl_) {
     mc_rtc::log::info("[Null Space mode] Torque control");
@@ -137,8 +142,8 @@ void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(
       mc_rtc::log::info("[Null Space mode] Nullspace compliance activated");
       nsCompliantFlag_ = true;
       ctl.compPostureTask->makeCompliant(true);
-    } 
-    
+    }
+
     else if (nsCompliantFlag_ && !ctl.triangleButtonFlag) {
       mc_rtc::log::info("[Null Space mode] Nullspace compliance deactivated");
       nsCompliantFlag_ = false;
@@ -149,8 +154,8 @@ void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(
       mc_rtc::log::info("[Null Space mode] End-effector compliance activated");
       eeCompliantFlag_ = true;
       ctl.compEETask->makeCompliant(true);
-    } 
-    
+    }
+
     else if (eeCompliantFlag_ && !ctl.squareButtonFlag) {
       mc_rtc::log::info(
           "[Null Space mode] End-effector compliance deactivated");
@@ -158,7 +163,6 @@ void MonodzukuriKinovaDemo_NSCompliant::controlModeManager(
       ctl.compEETask->makeCompliant(false);
     }
   }
-  
 }
 
 void MonodzukuriKinovaDemo_NSCompliant::nullSpaceControl(
@@ -211,7 +215,7 @@ void MonodzukuriKinovaDemo_NSCompliant::addGui(
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
   // auto gui = ctl.gui();
- 
+
   // ctl.gui()->addElement(
   //     {"Controller"},
   //     mc_rtc::gui::ArrayInput(
@@ -268,7 +272,8 @@ void MonodzukuriKinovaDemo_NSCompliant::addGui(
   //               "t",
   //               [this]() {
   //                 return (compEETask->positionTask->position().z() -
-  //                         realRobot->bodyPosW(tool_frame).translation().z()) *
+  //                         realRobot->bodyPosW(tool_frame).translation().z())
+  //                         *
   //                        1e3;
   //               },
   //               mc_rtc::gui::Color::Red));
@@ -284,7 +289,6 @@ void MonodzukuriKinovaDemo_NSCompliant::addGui(
   //                  1e3;
   //         },
   //         mc_rtc::gui::Color::Red));
-  
 }
 
 void MonodzukuriKinovaDemo_NSCompliant::addLog(
