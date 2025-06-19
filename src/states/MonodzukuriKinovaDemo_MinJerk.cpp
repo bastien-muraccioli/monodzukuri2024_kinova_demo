@@ -21,16 +21,16 @@ void MonodzukuriKinovaDemo_MinJerk::start(mc_control::fsm::Controller &ctl_) {
   ctl.datastore().call<void, double>("EF_Estimator::setGain",
                                      FITTS_RESIDUAL_GAIN);
 
-  // ctl.datastore().call<void, std::vector<double>>(
-  //     "set_kinova_friction_compensation_stiction",
-  //     {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
-  // ctl.datastore().call<void, std::vector<double>>(
-  //     "set_kinova_friction_compensation_coulomb",
-  //     {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
-  // ctl.datastore().call<void, std::vector<double>>(
-  //     "set_kinova_friction_compensation_viscous",
-  //     {2.0, 2.0, 2.0, 2.0, 1.5, 1.5, 1.5});
-  // ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 10.0);
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_stiction",
+      {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_coulomb",
+      {2.0, 2.0, 2.0, 2.0, 0.8, 0.8, 0.8});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_viscous",
+      {2.0, 2.0, 2.0, 2.0, 1.5, 1.5, 1.5});
+  ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 10.0);
 
   mj_task = std::make_shared<mc_tasks::MinimumJerkTask>(
       ctl.tool_frame, ctl.robots(), ctl.robot().robotIndex(), 10000.0);
@@ -151,6 +151,18 @@ bool MonodzukuriKinovaDemo_MinJerk::run(mc_control::fsm::Controller &ctl_) {
 void MonodzukuriKinovaDemo_MinJerk::teardown(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_stiction",
+      {4.0, 4.0, 4.0, 4.0, 1.8, 1.8, 1.8});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_coulomb",
+      {3.5, 3.5, 3.5, 3.5, 1.5, 1.5, 1.5});
+  ctl.datastore().call<void, std::vector<double>>(
+      "set_kinova_friction_compensation_viscous",
+      {2.0, 2.0, 2.0, 2.0, 2.0, 2.0});
+  ctl.datastore().call<void, double>("set_kinova_integral_term_gain", 30.0);
+
   ctl.game.setRobotRadius(ctl.robot_radius);
   ctl.solver().removeTask(mj_task);
   ctl.solver().removeTask(oriTask_);
