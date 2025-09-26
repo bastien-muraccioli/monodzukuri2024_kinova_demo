@@ -33,7 +33,7 @@ private:
   // double stiffnessMax_ = 75.0;
   // Parameters for stiffness adjustment
   // stiffness = A* exp(k_slope_ * distance) + C
-  double k_slope_ = -2; // Slope for stiffness adjustment (Strictly negative for decreasing stiffness)
+  double k_slope_ = -2; // Slope for stiffness adjustment (Strictly negative for increasing stiffness)
   double A_;
   double C_;
 

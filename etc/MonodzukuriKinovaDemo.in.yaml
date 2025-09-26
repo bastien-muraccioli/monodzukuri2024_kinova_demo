@@ -68,6 +68,15 @@ init: MonodzukuriKinovaDemo_Initial
 
 Plugins: [ ExternalForcesEstimator, mc_joystick_plugin ]
 
+robots:
+  Kinova:
+    tool_frame: "DS4_tool"
+
+  KinovaBota:
+    tool_frame: "FT_sensor_wrench"
+
+tool_frame: "end_effector_link"
+
 ObserverPipelines:
 - name: Pipeline
   observers:

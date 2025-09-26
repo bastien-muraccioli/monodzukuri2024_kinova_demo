@@ -31,7 +31,7 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
 
   // tool frame
   std::string tool_frame;
-    std::string shoulder_frame;
+  std::string shoulder_frame;
 
   // Dynamics velocity damper parameters
   double m_;
