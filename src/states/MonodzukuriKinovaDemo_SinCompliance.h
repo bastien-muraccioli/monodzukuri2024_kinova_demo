@@ -32,7 +32,7 @@ private:
   double posTorqueTransitionTime_ = 0.0;
   double posTorqueTransitionDuration_ = 1.0;
   bool posTorqueTransitionStarted_ = false;
-  double init_x = 0.75;
+  double init_x = 0.6;
   double init_z = 0.4;
 
   std::vector<Eigen::Vector3d> visualSinTraj();
