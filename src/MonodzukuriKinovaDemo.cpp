@@ -44,7 +44,7 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
   // Initalize the current task
   taskOrientation_ =
       Eigen::Quaterniond(1, -1, -1, -1).normalized().toRotationMatrix();
-  taskPosition_ = Eigen::Vector3d(0.75, 0.0, 0.4);
+  taskPosition_ = Eigen::Vector3d(0.6, 0.0, 0.4);
   posture_target_log.setZero(robot().mb().nrJoints());
   solver().removeTask(getPostureTask(robot().name()));
   compPostureTask = std::make_shared<mc_tasks::CompliantPostureTask>(

@@ -13,7 +13,7 @@
 #include <thread>
 
 #define FITTS_RESIDUAL_GAIN 30.0
-#define HIGH_RESIDUAL_GAIN 5.0
+#define HIGH_RESIDUAL_GAIN 20.0
 #define LOW_RESIDUAL_GAIN 0.5
 
 struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
