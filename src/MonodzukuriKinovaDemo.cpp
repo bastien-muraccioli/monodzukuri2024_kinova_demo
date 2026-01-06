@@ -3,6 +3,7 @@
 MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
     mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration &config)
     : mc_control::fsm::Controller(rm, dt, config, Backend::TVM) {
+
   // Initialize the velocity damper parameters (closed-loop by default)
   dt_ctrl = dt;
   xsiOff_ = 0.0;
@@ -15,13 +16,13 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
   tool_frame = config("tool_frame", (std::string) "FT_sensor_wrench");
   shoulder_frame = config("shoulder_frame", (std::string) "forearm_link");
 
-  mc_rtc::log::info(
-      "[MonodzukuriKinovaDemo] Tool frame: {}", tool_frame);
+  mc_rtc::log::info("[MonodzukuriKinovaDemo] Tool frame: {}", tool_frame);
   // Initialize the constraints
   selfCollisionConstraint->setCollisionsDampers(solver(), {m_, lambda_});
   dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
-      new mc_solver::DynamicsConstraint(
-          robots(), 0, {0.1, 0.01, xsiOff_, m_, lambda_}, 0.9, true));
+      new mc_solver::DynamicsConstraint(robots(), 0, timeStep,
+                                        {0.1, 0.01, xsiOff_}, {m_, lambda_},
+                                        0.9, false, true));
   solver().addConstraintSet(dynamicsConstraint);
 
   // Initialize the future tasks values
@@ -148,8 +149,9 @@ void MonodzukuriKinovaDemo::updateConstraints(bool closeLoop) {
   if (closeLoop) {
     solver().removeConstraintSet(dynamicsConstraint);
     dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
-        new mc_solver::DynamicsConstraint(
-            robots(), 0, {0.1, 0.01, xsiOff_, m_, lambda_}, 0.9, true));
+        new mc_solver::DynamicsConstraint(robots(), 0, timeStep,
+                                          {0.1, 0.01, xsiOff_}, {m_, lambda_},
+                                          0.9, false, true));
     solver().addConstraintSet(dynamicsConstraint);
     selfCollisionConstraint->setCollisionsDampers(solver(), {m_, lambda_});
 
@@ -182,8 +184,9 @@ void MonodzukuriKinovaDemo::updateConstraints(void) {
   {
     solver().removeConstraintSet(dynamicsConstraint);
     dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
-        new mc_solver::DynamicsConstraint(
-            robots(), 0, {0.1, 0.01, xsiOff_, m_, lambda_}, 0.9, true));
+        new mc_solver::DynamicsConstraint(robots(), 0, timeStep,
+                                          {0.1, 0.01, xsiOff_}, {m_, lambda_},
+                                          0.9, false, true));
     solver().addConstraintSet(dynamicsConstraint);
     selfCollisionConstraint->setCollisionsDampers(solver(), {m_, lambda_});
     velocityDamperFlag_ = true;

@@ -3,7 +3,6 @@
 #include <mc_control/fsm/Controller.h>
 #include <mc_joystick_plugin/joystick_inputs.h>
 #include <mc_rbdyn/Collision.h>
-#include <mc_rbdyn/VirtualTorqueSensor.h>
 #include <mc_tasks/CompliantEndEffectorTask.h>
 #include <mc_tasks/CompliantPostureTask.h>
 
@@ -77,26 +76,31 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
   // In MinJerkState: you activate the Fitts Law experiment
   // In NullSpaceState: you activate the Double Compliance
   bool crossButtonFlag = false;
-  bool squareButtonFlag = false; // When you press Square in NS mode, you activate
-                              // the end-effector compliance
-  bool circleButtonFlag = false; // When you press Circle in NS mode, you can
-                              // change between the position or torque control
+  bool squareButtonFlag = false; // When you press Square in NS mode, you
+                                 // activate the end-effector compliance
+  bool circleButtonFlag =
+      false; // When you press Circle in NS mode, you can
+             // change between the position or torque control
   bool triangleButtonFlag = false; // When you press Triangle in NS mode, you
-                                // activate the nullspace compliance
+                                   // activate the nullspace compliance
 
   bool changeModeAvailable = true;
   bool changeModeRequest = false;
 
-  std::vector<std::pair<std::map<std::string, std::vector<double>>, sva::PTransformd>> wayPoints; // Contains posture targets and the end-effector position/rotation
+  std::vector<
+      std::pair<std::map<std::string, std::vector<double>>, sva::PTransformd>>
+      wayPoints; // Contains posture targets and the end-effector
+                 // position/rotation
   int jointNumber;
 
   double dt_ctrl;
-  bool kinestheticTeachingHasBeenPlayed_ = false; // Flag to check if the kinesthetic teaching has been played
+  bool kinestheticTeachingHasBeenPlayed_ =
+      false; // Flag to check if the kinesthetic teaching has been played
 
 private:
   mc_rtc::Configuration config_;
   std::vector<mc_rbdyn::Collision> collisions_;
-  
+
   void getPostureTarget(void);
 
   void joypadManager(void);
