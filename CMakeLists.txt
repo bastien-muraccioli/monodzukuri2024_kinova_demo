@@ -7,9 +7,7 @@ set(PROJECT_NAME MonodzukuriKinovaDemo)
 set(PROJECT_DESCRIPTION "MonodzukuriKinovaDemo")
 set(PROJECT_URL "")
 
-add_compile_definitions(
-  PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-)
+add_compile_definitions(PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 project(
   ${PROJECT_NAME}
@@ -23,12 +21,11 @@ if(NOT TARGET mc_rtc::mc_control)
 endif()
 
 find_package(MinimumJerkTask REQUIRED)
+find_package(BoxDemoController REQUIRED)
 
 add_subdirectory(src)
 
-# if(BUILD_TESTING)
-#   add_subdirectory(tests)
-# endif()
+# if(BUILD_TESTING) add_subdirectory(tests) endif()
 
 configure_file(etc/MonodzukuriKinovaDemo.in.yaml
                "${CMAKE_CURRENT_BINARY_DIR}/etc/MonodzukuriKinovaDemo.yaml")

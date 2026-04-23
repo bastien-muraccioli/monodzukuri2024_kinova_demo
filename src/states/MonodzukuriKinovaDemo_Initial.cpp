@@ -7,6 +7,7 @@ void MonodzukuriKinovaDemo_Initial::configure(
 
 void MonodzukuriKinovaDemo_Initial::start(mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
+  ctl.resetModeSwitchState();
 
   // Deactivate feedback from external forces estimator (safer)
   if (ctl.datastore().call<bool>("EF_Estimator::isActive")) {
@@ -19,7 +20,16 @@ void MonodzukuriKinovaDemo_Initial::start(mc_control::fsm::Controller &ctl_) {
   ctl.datastore().call<void, double>("EF_Estimator::setGain",
                                      HIGH_RESIDUAL_GAIN);
 
+  auto defaultPostureTask = ctl.getPostureTask(ctl.robot().name());
+  if (defaultPostureTask && defaultPostureTask->inSolver()) {
+    ctl.solver().removeTask(defaultPostureTask);
+  }
+  if (!ctl.compPostureTask->inSolver()) {
+    ctl.solver().addTask(ctl.compPostureTask);
+  }
+
   // Setting gain of posture task for torque control mode
+  ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.5);
   ctl.compPostureTask->target(ctl.postureHome);
   ctl.compPostureTask->makeCompliant(false);
@@ -71,6 +81,11 @@ bool MonodzukuriKinovaDemo_Initial::run(mc_control::fsm::Controller &ctl_) {
         ctl.changeModeAvailable = false;
         ctl.changeModeRequest = false;
         output("MINJERK");
+        return true;
+      } else if (ctl.joypadBoxDemoModeFlag) {
+        ctl.changeModeAvailable = false;
+        ctl.changeModeRequest = false;
+        output("BOXDEMO");
         return true;
       }
     }

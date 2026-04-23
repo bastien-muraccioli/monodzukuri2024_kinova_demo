@@ -8,12 +8,14 @@ StepByStep: true
 IdleKeepState: false
 # Where to look for state libraries
 StatesLibraries:
-- "@MC_STATES_DEFAULT_RUNTIME_INSTALL_PREFIX@"
-- "@MC_STATES_RUNTIME_INSTALL_PREFIX@"
+  - "@MC_STATES_DEFAULT_RUNTIME_INSTALL_PREFIX@"
+  - "@MC_STATES_RUNTIME_INSTALL_PREFIX@"
+  - "@BoxDemo_STATES_LIBRARIES@"
 # Where to look for state files
 StatesFiles:
-- "@MC_STATES_DEFAULT_RUNTIME_INSTALL_PREFIX@/data"
-- "@MC_STATES_RUNTIME_INSTALL_PREFIX@/data"
+  - "@MC_STATES_DEFAULT_RUNTIME_INSTALL_PREFIX@/data"
+  - "@MC_STATES_RUNTIME_INSTALL_PREFIX@/data"
+  - "@BoxDemo_STATES_FILES@"
 # If true, state factory will be more verbose
 VerboseStateFactory: false
 # Additional robots to load
@@ -23,18 +25,61 @@ robots:
 
 # Collision constraint
 collisions:
-- type: collision
-  useMinimal: true
+  - type: collision
+    useMinimal: true
 
 # Implement some additional text states
-states: 
+states:
+  BoxDemo:
+    base: BoxDemoController_Compliance
+    toolFrame: "tool"
+    postureHome:
+      joint_1: [0]
+      joint_2: [0.262]
+      joint_3: [3.14]
+      joint_4: [-2.269]
+      joint_5: [0]
+      joint_6: [0.96]
+      joint_7: [1.57]
+    targetPosition: [0.6, 0.0, 0.4]
+    targetOrientationQuaternion: [1.0, -1.0, -1.0, -1.0]
+    workspaceConstraintEnabled: true
+    workspaceMin: [0.4, -0.8, -0.2]
+    workspaceMax: [1.0, 0.8, 0.7]
+    residualGain: 10.0
+    planarTranslationTriggerOnThreshold: 10.0
+    planarTranslationTriggerOffThreshold: 8.0
+    rotationZTriggerOnThreshold: 1.5
+    rotationZTriggerOffThreshold: 1.0
+    dFZComplianceOnThreshold: 10.0
+    dFZComplianceOffThreshold: 8.0
+    triggerAveragingWindow: 0.1
+    complianceGain: 1.0
+    nominalPositionStiffness: 100.0
+    nominalPositionDamping: 40.0
+    planarTranslationStiffness: 0.0
+    planarTranslationDamping: [20.0, 20.0, 30.0]
+    nominalOrientationStiffness: [100.0, 100.0, 100.0]
+    nominalOrientationDamping: [40.0, 40.0, 40.0]
+    exclusiveComplianceModes: false
+    orientationManagementMode: "Compliance"
+    rotationZOrientationStiffness: 0.0
+    rotationZOrientationDamping: 20.0
+    worldZTorqueToLocalYGain: 0.1
+    maxLocalYOrientationOffset: 1.2
+    gainTransitionTime: 0.4
   FSM_Compliance:
     base: Meta
     Managed: false
     StepByStep: true
 
     transitions:
-      - [MonodzukuriKinovaDemo_Compliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
+      - [
+          MonodzukuriKinovaDemo_Compliance,
+          OK,
+          MonodzukuriKinovaDemo_Initial,
+          Auto,
+        ]
 
   FSM_NSCompliant:
     base: Meta
@@ -42,44 +87,83 @@ states:
     StepByStep: true
 
     transitions:
-      - [MonodzukuriKinovaDemo_NSCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
-
+      - [
+          MonodzukuriKinovaDemo_NSCompliant,
+          OK,
+          MonodzukuriKinovaDemo_Initial,
+          Auto,
+        ]
 
 # Transitions map
 transitions:
-  - [MonodzukuriKinovaDemo_Initial, COMPLI, MonodzukuriKinovaDemo_Compliance, Auto]
+  - [
+      MonodzukuriKinovaDemo_Initial,
+      COMPLI,
+      MonodzukuriKinovaDemo_Compliance,
+      Auto,
+    ]
   - [MonodzukuriKinovaDemo_Compliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
   - [MonodzukuriKinovaDemo_Initial, NS, MonodzukuriKinovaDemo_NSCompliant, Auto]
   - [MonodzukuriKinovaDemo_NSCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
-  - [MonodzukuriKinovaDemo_Initial, MINJERK, MonodzukuriKinovaDemo_MinJerk, Auto]
+  - [
+      MonodzukuriKinovaDemo_Initial,
+      MINJERK,
+      MonodzukuriKinovaDemo_MinJerk,
+      Auto,
+    ]
   - [MonodzukuriKinovaDemo_MinJerk, OK, MonodzukuriKinovaDemo_Initial, Auto]
-  - [MonodzukuriKinovaDemo_Initial, SIN, MonodzukuriKinovaDemo_SinCompliance, Auto]
-  - [MonodzukuriKinovaDemo_SinCompliance, OK, MonodzukuriKinovaDemo_Initial, Auto]
-  - [MonodzukuriKinovaDemo_NSCompliant, DC, MonodzukuriKinovaDemo_DCompliant, Auto]
-  - [MonodzukuriKinovaDemo_DCompliant, NS, MonodzukuriKinovaDemo_NSCompliant, Auto]
+  - [
+      MonodzukuriKinovaDemo_Initial,
+      SIN,
+      MonodzukuriKinovaDemo_SinCompliance,
+      Auto,
+    ]
+  - [
+      MonodzukuriKinovaDemo_SinCompliance,
+      OK,
+      MonodzukuriKinovaDemo_Initial,
+      Auto,
+    ]
+  - [MonodzukuriKinovaDemo_Initial, BOXDEMO, BoxDemo, Auto]
+  - [BoxDemo, OK, MonodzukuriKinovaDemo_Initial, Auto]
+  - [
+      MonodzukuriKinovaDemo_NSCompliant,
+      DC,
+      MonodzukuriKinovaDemo_DCompliant,
+      Auto,
+    ]
+  - [
+      MonodzukuriKinovaDemo_DCompliant,
+      NS,
+      MonodzukuriKinovaDemo_NSCompliant,
+      Auto,
+    ]
   - [MonodzukuriKinovaDemo_DCompliant, OK, MonodzukuriKinovaDemo_Initial, Auto]
-  - [MonodzukuriKinovaDemo_DCompliant, RUN, MonodzukuriKinovaDemo_wayPointDCompliant, Auto]
-  - [MonodzukuriKinovaDemo_wayPointDCompliant, OK, MonodzukuriKinovaDemo_DCompliant, Auto]
+  - [
+      MonodzukuriKinovaDemo_DCompliant,
+      RUN,
+      MonodzukuriKinovaDemo_wayPointDCompliant,
+      Auto,
+    ]
+  - [
+      MonodzukuriKinovaDemo_wayPointDCompliant,
+      OK,
+      MonodzukuriKinovaDemo_DCompliant,
+      Auto,
+    ]
   # - [MonodzukuriKinovaDemo_Initial, OK, MonodzukuriKinovaDemo_Calibration, Auto]
   # - [MonodzukuriKinovaDemo_Calibration, OK, MonodzukuriKinovaDemo_Initial, Auto]
 
 # Initial state
 init: MonodzukuriKinovaDemo_Initial
 
-Plugins: [ RosForceSensor, ExternalForcesEstimator, mc_joystick_plugin ]
-
-robots:
-  Kinova:
-    tool_frame: "DS4_tool"
-
-  KinovaBota:
-    tool_frame: "FT_sensor_wrench"
+Plugins: [RosForceSensor, ExternalForcesEstimator, mc_joystick_plugin]
 
 tool_frame: "end_effector_link"
 
 ObserverPipelines:
-- name: Pipeline
-  observers:
-    - type: Encoder
-      config:
-        velocity: encoderVelocities
+  - name: Pipeline
+    observers:
+      - type: Encoder
+        config:
+          velocity: encoderVelocities

@@ -27,6 +27,7 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
   // Update the Dynamics and the Collisions constraints for the controller
   void updateConstraints(bool closeLoop);
   void updateConstraints(void);
+  void resetModeSwitchState(void);
 
   // tool frame
   std::string tool_frame;
@@ -71,6 +72,8 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
              // sinus mode
   bool joypadMinJerkModeFlag = false; // When you press the left pad button, you
                                       // enter in minimum jerk mode
+  bool joypadBoxDemoModeFlag =
+      false; // When you press START, you enter in the BoxDemo mode
 
   // When you press the X button (A in the pluggin),
   // In MinJerkState: you activate the Fitts Law experiment
@@ -83,6 +86,8 @@ struct MonodzukuriKinovaDemo_DLLAPI MonodzukuriKinovaDemo
              // change between the position or torque control
   bool triangleButtonFlag = false; // When you press Triangle in NS mode, you
                                    // activate the nullspace compliance
+  bool joypadReturnToInitialFlag =
+      false; // When you press SELECT, request a return to Initial
 
   bool changeModeAvailable = true;
   bool changeModeRequest = false;
@@ -104,6 +109,8 @@ private:
   void getPostureTarget(void);
 
   void joypadManager(void);
+  bool consumeSimulatedPress(bool &flag);
+  bool hasSimulatedJoystickInput(void) const;
 
   // State index
   int stateIndex_;
@@ -124,6 +131,21 @@ private:
   bool squareButtonLastState_ = false;
   bool triangleButtonLastState_ = false;
   bool circleButtonLastState_ = false;
+  bool startButtonLastState_ = false;
+  bool selectButtonLastState_ = false;
+  bool simulateAButtonPress_ = false;
+  bool simulateBButtonPress_ = false;
+  bool simulateXButtonPress_ = false;
+  bool simulateYButtonPress_ = false;
+  bool simulateLBButtonPress_ = false;
+  bool simulateRBButtonPress_ = false;
+  bool simulateStartButtonPress_ = false;
+  bool simulateSelectButtonPress_ = false;
+  bool simulateUpPadPress_ = false;
+  bool simulateDownPadPress_ = false;
+  bool simulateLeftPadPress_ = false;
+  bool simulateRightPadPress_ = false;
+  bool simulateRTPressed_ = false;
   bool uiInEnglish_ = true;
   bool languageFlag_ = true;
 };
