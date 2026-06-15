@@ -8,7 +8,7 @@ void MonodzukuriKinovaDemo_Compliance::start(
     mc_control::fsm::Controller &ctl_) {
   auto &ctl = static_cast<MonodzukuriKinovaDemo &>(ctl_);
 
-  // Disable feedback from external forces estimator (safer)
+  // Enable feedback from external forces estimator (safer)
   if (!ctl.datastore().call<bool>("EF_Estimator::isActive")) {
     ctl.datastore().call("EF_Estimator::toggleActive");
   }

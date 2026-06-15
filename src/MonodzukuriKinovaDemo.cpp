@@ -18,7 +18,7 @@ MonodzukuriKinovaDemo::MonodzukuriKinovaDemo(
   mc_rtc::log::info(
       "[MonodzukuriKinovaDemo] Tool frame: {}", tool_frame);
   // Initialize the constraints
-  selfCollisionConstraint->setCollisionsDampers(solver(), {m_, lambda_});
+  selfCollisionConstraint->setCollisionsDampers(solver(), {1.1, 9.0});
   dynamicsConstraint = mc_rtc::unique_ptr<mc_solver::DynamicsConstraint>(
       new mc_solver::DynamicsConstraint(
           robots(), 0, {0.1, 0.01, xsiOff_, m_, lambda_}, 0.9, true));

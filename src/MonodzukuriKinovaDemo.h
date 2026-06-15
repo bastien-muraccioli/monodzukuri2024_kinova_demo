@@ -3,7 +3,6 @@
 #include <mc_control/fsm/Controller.h>
 #include <mc_joystick_plugin/joystick_inputs.h>
 #include <mc_rbdyn/Collision.h>
-#include <mc_rbdyn/VirtualTorqueSensor.h>
 #include <mc_tasks/CompliantEndEffectorTask.h>
 #include <mc_tasks/CompliantPostureTask.h>
 

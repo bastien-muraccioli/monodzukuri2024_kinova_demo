@@ -25,11 +25,16 @@ void MonodzukuriKinovaDemo_NSCompliant::start(
 
   ctl.compPostureTask->reset();
   ctl.compPostureTask->stiffness(0.5);
-  ctl.compPostureTask->target(ctl.postureTarget);
-  ctl.compPostureTask->makeCompliant(false);
-  ctl.solver().removeTask(ctl.compEETask);
-  ctl.datastore().assign<std::string>("ControlMode", "Position");
 
+  // If cross button has been pressed this mean we come from dual compliance mode
+  // Thus no need to set everything again
+  if(!ctl.crossButtonFlag){
+    ctl.compPostureTask->target(ctl.postureTarget);
+    ctl.compPostureTask->makeCompliant(false);
+    ctl.solver().removeTask(ctl.compEETask);
+    ctl.datastore().assign<std::string>("ControlMode", "Position");
+  }
+  
   ctl.changeModeAvailable = true;
   ctl.changeModeRequest = false;
   ctl.crossButtonFlag =
