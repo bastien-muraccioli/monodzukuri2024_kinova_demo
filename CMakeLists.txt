@@ -31,3 +31,9 @@ configure_file(etc/MonodzukuriKinovaDemo.in.yaml
                "${CMAKE_CURRENT_BINARY_DIR}/etc/MonodzukuriKinovaDemo.yaml")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/etc/MonodzukuriKinovaDemo.yaml"
         DESTINATION "${MC_CONTROLLER_RUNTIME_INSTALL_PREFIX}/etc")
+
+# Per-controller plugin config override, read by mc_rtc from
+# etc/MonodzukuriKinovaDemo/plugins/<Plugin>.yaml under this install prefix (see
+# MCGlobalController::GlobalConfiguration::load_controller_plugin_configs()).
+install(FILES "etc/MonodzukuriKinovaDemo/plugins/ExternalForcesEstimator.yaml"
+        DESTINATION "${MC_CONTROLLER_RUNTIME_INSTALL_PREFIX}/etc/MonodzukuriKinovaDemo/plugins")

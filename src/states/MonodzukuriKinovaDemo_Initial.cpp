@@ -37,7 +37,7 @@ void MonodzukuriKinovaDemo_Initial::start(mc_control::fsm::Controller &ctl_) {
 
   ctl.datastore().assign<std::string>("ControlMode", "Position");
   if (ctl.datastore().has("mc_kortex::setLambda")) {
-    ctl.datastore().call<void, std::vector<double>>(
+    ctl.datastore().call<void, const std::vector<double> &>(
         "mc_kortex::setLambda", {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0});
     ctl.datastore().call<void, double>("mc_kortex::setVelThreshold", 0.1);
     ctl.datastore().call<void, double>("mc_kortex::setAccThreshold", 1);
